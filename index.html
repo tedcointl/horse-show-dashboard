@@ -455,7 +455,7 @@ async function doPublish(){
       let sha;
       const g = await fetch(api+'?ref='+encodeURIComponent(branch)+'&t='+Date.now(), {headers:H, cache:'no-store'});
       if(g.ok) sha = (await g.json()).sha;
-      else if(g.status!==404) throw new Error(ghErr(g.status));
+      else if(g.status!==404) throw new Error(ghErr(g.status, await ghMsg(g), false));
       const body = {message:'Update catalogue data '+new Date().toISOString(), content:buildXlsxBase64(c.contacts!==false), branch};
       if(sha) body.sha = sha;
       const p = await fetch(api, {method:'PUT', headers:{...H,'Content-Type':'application/json'}, body:JSON.stringify(body)});
@@ -464,7 +464,7 @@ async function doPublish(){
         setSyncNote('Published ✓ '+new Date().toLocaleTimeString()+' — the shared dashboard picks it up within a few minutes.');
         return;
       }
-      if(p.status!==409 && p.status!==422) throw new Error(ghErr(p.status));
+      if(p.status!==409 && p.status!==422) throw new Error(ghErr(p.status, await ghMsg(p), true));
     }
     throw new Error('file changed on GitHub while saving — click Publish again');
   } catch(e){ setSyncNote('Publish failed: '+(e instanceof TypeError ? 'cannot reach api.github.com — check internet, VPN/firewall or an ad-blocker, then click Test connection.' : e.message)); }
@@ -489,11 +489,15 @@ ghSave.addEventListener('click', ()=>{ setSyncNote(saveGhFields() ? 'GitHub sett
 publishNowBtn.addEventListener('click', ()=>{ saveGhFields(); publishNow(); });
 ghPull.addEventListener('click', ()=>{ syncFromRemote(true, true); });
 
-function ghErr(s){
-  return s===401 ? 'GitHub rejected the token (401) — it is mistyped, expired or revoked'
+async function ghMsg(res){ try{ const j = await res.json(); return (j && j.message) || ''; }catch(e){ return ''; } }
+function ghErr(s, msg, writing){
+  const extra = msg ? ' [GitHub says: "'+msg+'"]' : '';
+  if(writing && (s===404 || s===403)) return 'GitHub will not let this token WRITE to the repository ('+s+'). Edit the token on GitHub: Repository access = "Only select repositories" → this repository, and Permissions → Contents = "Read and write" (a classic token needs the "repo" scope). Then paste the new token and Save settings.'+extra;
+  return (s===401 ? 'GitHub rejected the token (401) — it is mistyped, expired or revoked'
        : s===403 ? 'GitHub refused (403) — the token needs Contents: Read and write on this repository (or rate limit)'
        : s===404 ? 'GitHub says not found (404) — check user, repository and branch, and that the token was given access to this repository'
-       : 'GitHub error '+s;
+       : s===422 ? 'GitHub could not accept the file (422) — check the branch name'
+       : 'GitHub error '+s)+extra;
 }
 // Step-by-step connection check, shown under the button.
 async function diagnose(){
@@ -512,6 +516,9 @@ async function diagnose(){
     const j = await r.json();
     say(true, 'Repository found ('+(j.private?'private':'public')+')');
     if(j.permissions && j.permissions.push===false){ say(false,'Token can read but NOT write — set Contents to "Read and write".'); return; }
+    r = await fetch(`${api}/repos/${c.owner}/${c.repo}/git/blobs`, {method:'POST', headers:{...H,'Content-Type':'application/json'}, body:JSON.stringify({content:'connection test', encoding:'utf-8'})});
+    if(!r.ok){ say(false, 'Token can read the repository but is NOT allowed to write ('+r.status+'). On GitHub edit the token: Repository access = "Only select repositories" → '+c.repo+'; Permissions → Contents = "Read and write" (classic token: tick "repo"). Then paste it again.'); return; }
+    say(true, 'Token is allowed to write to the repository');
     r = await fetch(`${api}/repos/${c.owner}/${c.repo}/branches/${encodeURIComponent(c.branch||'main')}`, {headers:H});
     if(!r.ok){ say(false,'Branch "'+(c.branch||'main')+'" not found — the default is usually main (some repos use master).'); return; }
     say(true,'Branch "'+(c.branch||'main')+'" found');
