@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Al Shaqab International Arabian Horse Show 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#f7f4ee; --card:#ffffff; --ink:#231910; --sub:#6b5d4f; --line:#e6ddd0;
+  --gold:#a97c2f; --gold-d:#7c5a20; --green:#2f5d3a; --accent:#8b1e2b;
+  --shadow:0 2px 10px rgba(50,35,10,.08);
+}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#171310; --card:#231d17; --ink:#f1e9dd; --sub:#b8a894; --line:#3a2f24;
+    --shadow:0 2px 10px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#171310; --card:#231d17; --ink:#f1e9dd; --sub:#b8a894; --line:#3a2f24;
+  --shadow:0 2px 10px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:Georgia,'Times New Roman',serif;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  -webkit-text-size-adjust:100%;
+}
+header{
+  background:linear-gradient(135deg,var(--gold-d),var(--gold));
+  color:#fff8ec; padding:18px 5vw 14px; box-shadow:var(--shadow);
+}
+header h1{margin:0; font-size:clamp(1.05rem,4vw,1.5rem); letter-spacing:.3px; line-height:1.25}
+header p{margin:4px 0 0; font-size:.8rem; opacity:.9; font-family:Arial,sans-serif}
+nav{
+  display:flex; gap:8px; padding:8px 4vw; background:var(--card); border-bottom:1px solid var(--line);
+  position:sticky; top:0; z-index:5; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
+}
+nav::-webkit-scrollbar{display:none}
+nav button{
+  font-family:Arial,sans-serif; font-size:.85rem; padding:11px 18px; border-radius:8px;
+  border:1px solid var(--line); background:transparent; color:var(--ink); cursor:pointer;
+  min-height:44px; white-space:nowrap; flex:0 0 auto; touch-action:manipulation;
+}
+nav button.active{background:var(--gold); color:#fff8ec; border-color:var(--gold)}
+main{max-width:1180px; margin:0 auto; padding:16px 4vw 60px}
+.view{display:none}
+.view.active{display:block}
+.kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; margin-bottom:18px}
+.kpi{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 10px; box-shadow:var(--shadow); text-align:center; cursor:pointer; transition:transform .15s,box-shadow .15s; touch-action:manipulation}
+.kpi:hover,.kpi:focus-visible{transform:translateY(-2px); box-shadow:0 4px 14px rgba(50,35,10,.18); outline:none}
+.kpi:active{transform:translateY(0)}
+.kpi .n{font-size:clamp(1.3rem,4vw,1.7rem); font-weight:700; color:var(--gold-d)}
+.kpi .l{font-family:Arial,sans-serif; font-size:.68rem; color:var(--sub); text-transform:uppercase; letter-spacing:.4px}
+.grid2{display:grid; grid-template-columns:1.2fr 1fr; gap:14px; margin-bottom:16px}
+@media(max-width:820px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; box-shadow:var(--shadow)}
+.card h3{margin:0 0 10px; font-size:1rem; color:var(--gold-d)}
+.card-canvas{position:relative; height:250px}
+@media(max-width:480px){.card-canvas{height:220px}}
+table{width:100%; border-collapse:collapse; font-family:Arial,sans-serif; font-size:.83rem; min-width:480px}
+th,td{padding:9px 8px; border-bottom:1px solid var(--line); text-align:left}
+th{color:var(--sub); font-weight:600; font-size:.72rem; text-transform:uppercase; letter-spacing:.4px; position:sticky; top:0; background:var(--card)}
+.scroll{max-height:360px; overflow:auto; -webkit-overflow-scrolling:touch; border-radius:8px}
+input[type=text],input[type=search],input[type=number],input[type=date],select{
+  font-family:Arial,sans-serif; padding:11px 12px; border:1px solid var(--line); border-radius:8px;
+  background:var(--bg); color:var(--ink); font-size:16px; width:100%; min-height:44px; touch-action:manipulation;
+}
+select{appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b5d4f'%3E%3Cpath d='M5.5 7.5l4.5 5 4.5-5z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; padding-right:34px}
+.field{margin-bottom:10px}
+.field label{display:block; font-family:Arial,sans-serif; font-size:.72rem; color:var(--sub); text-transform:uppercase; margin-bottom:4px}
+.row{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px}
+@media(max-width:600px){.row,.row3{grid-template-columns:1fr}}
+.btn{font-family:Arial,sans-serif; background:var(--green); color:#fff; border:none; padding:13px 22px; border-radius:8px; font-size:.95rem; cursor:pointer; min-height:46px; width:100%; touch-action:manipulation}
+.btn.secondary{background:var(--gold)}
+@media(min-width:600px){.btn{width:auto}}
+.pill{display:inline-block; background:var(--bg); border:1px solid var(--line); border-radius:20px; padding:3px 10px; font-size:.72rem; font-family:Arial,sans-serif; color:var(--sub); margin:2px}
+.tablewrap{overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:8px}
+.hint-scroll{font-family:Arial,sans-serif; font-size:.68rem; color:var(--sub); margin:0 0 6px; display:none}
+@media(max-width:700px){.hint-scroll{display:block}}
+#ownerTable table{min-width:0}
+[contenteditable="true"]{cursor:text}
+[contenteditable="true"]:focus{outline:2px solid var(--gold); outline-offset:-2px; background:var(--bg)}
+.paid-toggle{width:20px; height:20px; min-height:0; cursor:pointer}
+#dbTable{min-width:980px}
+.viewonly nav,.viewonly #db,.viewonly #inv,.viewonly .sharebar{display:none!important}
+button.kpi{font-family:inherit; color:inherit; cursor:pointer; width:100%; min-height:72px; touch-action:manipulation; transition:transform .1s, border-color .15s}
+button.kpi:hover{border-color:var(--gold)}
+button.kpi:active{transform:scale(.97)}
+button.kpi.active{border:2px solid var(--gold); background:var(--bg)}
+.kpi .l::after{content:" ▾"}
+button.kpi.active .l::after{content:" ▴"}
+#kpiDetail .card{margin-bottom:18px; border-color:var(--gold)}
+#kpiDetail .dh{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px}
+#kpiDetail .dh h3{margin:0}
+#kpiDetail .close{font-family:Arial,sans-serif; background:transparent; border:1px solid var(--line); color:var(--ink); border-radius:8px; min-height:40px; padding:0 14px; cursor:pointer}
+details.grp{border:1px solid var(--line); border-radius:10px; margin-bottom:8px; background:var(--bg)}
+details.grp summary{cursor:pointer; padding:12px; font-family:Arial,sans-serif; font-size:.88rem; display:flex; justify-content:space-between; gap:10px; min-height:44px; align-items:center; list-style:none}
+details.grp summary::-webkit-details-marker{display:none}
+details.grp summary .cnt{background:var(--gold); color:#fff8ec; border-radius:20px; padding:2px 11px; font-weight:700; font-size:.8rem; white-space:nowrap}
+details.grp .inner{padding:0 10px 10px; overflow-x:auto}
+details.grp table{min-width:420px}
+.modal-overlay{position:fixed; inset:0; background:rgba(20,14,6,.55); z-index:50; display:flex; align-items:flex-end; justify-content:center}
+@media(min-width:700px){.modal-overlay{align-items:center; padding:20px}}
+.modal-box{background:var(--card); width:100%; max-width:720px; max-height:85vh; overflow:auto; -webkit-overflow-scrolling:touch; border-radius:16px 16px 0 0; box-shadow:var(--shadow); padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px))}
+@media(min-width:700px){.modal-box{border-radius:14px}}
+.modal-head{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; position:sticky; top:0; background:var(--card); padding-bottom:8px; border-bottom:1px solid var(--line)}
+.modal-head h3{margin:0; color:var(--gold-d); font-size:1.05rem; font-family:Arial,sans-serif}
+.modal-close{background:none; border:none; font-size:1.3rem; cursor:pointer; color:var(--ink); min-width:44px; min-height:44px; touch-action:manipulation}
+.modal-body table{font-size:.82rem}
+/* Invoice sheet */
+:root{ --brand:#8E1838; --brand-d:#6B1229; --brand-tint:#F6ECEF; --brand-taupe:#918277; }
+#invoiceSheet{background:#fff; color:#1a1a1a; border-radius:10px; box-shadow:var(--shadow); padding:0 0 36px; font-family:Arial,sans-serif; margin-top:16px; overflow:hidden}
+@media(max-width:600px){#invoiceSheet{padding-bottom:18px}}
+.inv-letterhead{padding:26px 40px 18px; text-align:center; border-bottom:2px solid var(--brand-tint)}
+.inv-letterhead img{max-width:360px; width:70%; height:auto}
+@media(max-width:600px){.inv-letterhead{padding:18px 14px 12px}.inv-letterhead img{max-width:240px}}
+#invoiceSheet .inv-body{padding:22px 40px 0}
+@media(max-width:600px){#invoiceSheet .inv-body{padding:16px 14px 0}}
+#invoiceSheet h2{text-align:center; letter-spacing:3px; color:var(--brand); margin:0 0 18px; font-size:clamp(1.1rem,5vw,1.4rem); font-weight:700}
+.inv-top{display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:14px; border:1px solid var(--brand-tint); border-radius:8px; padding:14px 16px; background:var(--brand-tint)}
+.inv-top .block p{margin:2px 0; font-size:.85rem; word-break:break-word}
+.inv-top .block b{display:inline-block; width:78px; color:var(--brand-d)}
+#invoiceSheet table{font-size:.8rem; min-width:560px}
+#invoiceSheet th{background:var(--brand); color:#fff8ec; font-weight:600}
+#invoiceSheet th, #invoiceSheet td{border:1px solid #e3d6da; color:#1a1a1a}
+.tot-row td{font-weight:700; background:var(--brand-tint); color:var(--brand-d)}
+.amt-input{width:80px; padding:8px 6px; border:1px solid #ccc; border-radius:6px; text-align:right; font-size:16px; min-height:38px}
+.bank{margin-top:22px; font-size:.78rem; color:#444; border-top:1px dashed var(--brand-taupe); padding-top:12px}
+.bank p{margin:2px 0}
+.bank b{color:var(--brand-d)}
+@page{ margin:0.4in }
+@media print{
+  header,nav,.no-print{display:none !important}
+  body{background:#fff}
+  main{padding:0; max-width:none}
+  #invoiceSheet{box-shadow:none; padding:0}
+  .tablewrap{overflow:visible}
+  #invoiceSheet table{min-width:0}
+}
+</style>
+</head>
+<body class="viewonly">
+<header>
+  <h1>🐎 Al Shaqab International Arabian Horse Show 2026</h1>
+  <p>Catalogue Dashboard</p>
+</header>
+<nav>
+  <button class="tab-btn active" data-view="dash">Dashboard</button>
+  <button class="tab-btn" data-view="inv">Invoice Generator</button>
+  <button class="tab-btn" data-view="db">Database</button>
+</nav>
+<main>
+
+<section id="dash" class="view active">
+  <div class="card no-print sharebar" style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px">
+    <p style="font-family:Arial;font-size:.8rem;color:var(--sub);margin:0">View-only overview of the show catalogue. Manage and edit the underlying data in the <b>Database</b> tab.</p>
+    <button class="btn secondary" id="shareDashBtn" type="button" style="width:auto">🔗 Share Dashboard</button>
+    <span id="dbSyncNote" style="font-family:Arial;font-size:.72rem;color:var(--sub)">Connecting to live sync…</span>
+    <div id="shareBox" style="display:none;flex-basis:100%">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="text" id="shareLink" style="flex:1 1 260px" aria-label="Dashboard view-only link">
+        <button class="btn" id="copyLinkBtn" type="button" style="width:auto">📋 Copy Link</button>
+      </div>
+      <p id="shareNote" style="font-family:Arial;font-size:.72rem;color:var(--sub);margin:6px 0 0"></p>
+    </div>
+  </div>
+  <p id="liveStatus" class="no-print" style="font-family:Arial;font-size:.74rem;color:var(--sub);margin:0 0 10px">Loading latest data…</p>
+  <div class="kpis" id="kpis"></div>
+  <div id="kpiDetail"></div>
+  <div class="grid2">
+    <div class="card"><h3>Entries by Class</h3><div class="card-canvas"><canvas id="classChart"></canvas></div></div>
+    <div class="card"><h3>Entries by Country</h3><div class="card-canvas"><canvas id="countryChart"></canvas></div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Top Owners by Entries</h3><div class="scroll tablewrap" id="ownerTable"></div></div>
+    <div class="card"><h3>Sex &amp; Colour Breakdown</h3><div class="card-canvas"><canvas id="sexColorChart"></canvas></div></div>
+  </div>
+  <div class="card" style="margin-bottom:16px">
+    <h3>Paid vs Unpaid Entries by Class</h3>
+    <div class="card-canvas"><canvas id="paidChart"></canvas></div>
+  </div>
+  <div class="card">
+    <h3>Full Catalogue (<span id="catCount"></span> horses)</h3>
+    <div class="field" style="max-width:340px"><input type="search" id="catSearch" placeholder="Search horse, owner, sire, class..."></div>
+    <p class="hint-scroll">↔ Swipe sideways to see all columns</p>
+    <div class="scroll tablewrap"><table id="catTable"><thead><tr><th>Class</th><th>Horse</th><th>Country</th><th>Sex</th><th>DOB</th><th>Sire</th><th>Dam</th><th>Owner</th><th>Paid</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</section>
+
+<section id="db" class="view">
+  <div class="card no-print" style="margin-bottom:16px">
+    <h3 style="margin-top:0">Update Data</h3>
+    <div class="row3" style="align-items:end">
+      <div class="field"><label>Choose Excel file (.xlsx)</label><input type="file" id="excelUpload" accept=".xlsx,.xls"></div>
+      <div class="field"><button class="btn" id="applyUploadBtn" type="button" disabled>✅ Update Dashboard &amp; List</button></div>
+      <div class="field"><button class="btn secondary" id="templateBtn" type="button">⬇️ Download Excel Format / Template</button></div>
+    </div>
+    <p id="uploadStatus" style="font-family:Arial;font-size:.8rem;color:var(--sub);margin:2px 0 10px"></p>
+    <details class="grp" style="margin-bottom:0">
+      <summary><span>Required column format (click to view)</span><span class="cnt">11 columns</span></summary>
+      <div class="inner" style="padding:10px">
+        <div class="scroll tablewrap"><table>
+          <thead><tr><th>Column header</th><th>Required?</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td>Horsename</td><td>Required</td><td>AL SHAQAB SAMIRA</td></tr>
+            <tr><td>Class name</td><td>Required</td><td>Yearling Fillies</td></tr>
+            <tr><td>Owner</td><td>Required</td><td>Al Shaqab Stud</td></tr>
+            <tr><td>Horse country</td><td>Optional</td><td>QA</td></tr>
+            <tr><td>Sex</td><td>Optional</td><td>F</td></tr>
+            <tr><td>Birth date</td><td>Optional</td><td>2024-03-15</td></tr>
+            <tr><td>Color</td><td>Optional</td><td>Grey</td></tr>
+            <tr><td>Sire</td><td>Optional</td><td>AJMAN MONIscA</td></tr>
+            <tr><td>Dam</td><td>Optional</td><td>MARWA AL SHAQAB</td></tr>
+            <tr><td>Owner Email</td><td>Optional</td><td>owner@example.com</td></tr>
+            <tr><td>Owner Phone</td><td>Optional</td><td>+974 5550 4595</td></tr>
+            <tr><td>Paid</td><td>Optional</td><td>Yes / No</td></tr>
+          </tbody>
+        </table></div>
+        <p style="font-family:Arial;font-size:.76rem;color:var(--sub);margin:8px 0 0">One row per horse, headers in the first row of the first sheet. Column order doesn't matter and header matching ignores capitalisation. "Paid" accepts Yes/No, Paid/Unpaid, True/False or 1/0 — leave it out or blank for unpaid. Download the template button above for a ready-made starting file.</p>
+      </div>
+    </details>
+  </div>
+  <div class="card no-print" id="ghCard" style="margin-bottom:16px">
+    <h3 style="margin-top:0">GitHub Sync (shared dashboard)</h3>
+    <div class="row3">
+      <div class="field"><label>GitHub user / organisation</label><input type="text" id="ghOwner" placeholder="e.g. alshaqab-events" autocomplete="off"></div>
+      <div class="field"><label>Repository</label><input type="text" id="ghRepo" placeholder="e.g. horse-show-dashboard" autocomplete="off"></div>
+      <div class="field"><label>Branch</label><input type="text" id="ghBranch" value="main" autocomplete="off"></div>
+    </div>
+    <div class="row3">
+      <div class="field"><label>Data file in repo</label><input type="text" id="ghPath" value="data.xlsx" autocomplete="off"></div>
+      <div class="field" style="grid-column:span 2"><label>Access token (fine-grained, Contents: read &amp; write)</label><input type="password" id="ghToken" autocomplete="off"></div>
+    </div>
+    <label style="display:block;font-family:Arial;font-size:.82rem;margin:4px 0"><input type="checkbox" id="ghAuto" checked> Publish automatically 3 seconds after each change</label>
+    <label style="display:block;font-family:Arial;font-size:.82rem;margin:4px 0 10px"><input type="checkbox" id="ghContacts" checked> Include owner email &amp; phone in the published Excel (anyone with the site address can download it)</label>
+    <div class="row3" style="max-width:640px">
+      <button class="btn secondary" id="ghSave" type="button">💾 Save settings</button>
+      <button class="btn secondary" id="ghPull" type="button">⬇️ Pull latest from GitHub</button>
+    </div>
+    <p style="font-family:Arial;font-size:.72rem;color:var(--sub);margin:8px 0 0">Settings and token are stored only in this browser. Use your own computer, and a token limited to this one repository.</p>
+  </div>
+  <div class="card no-print" style="margin-bottom:16px">
+    <h3 style="margin-top:0">Data Tools</h3>
+    <div class="row3">
+      <div class="field"><label>Search</label><input type="search" id="dbSearch" placeholder="Search horse, owner, sire, class..."></div>
+      <div class="field"><label>&nbsp;</label><button class="btn secondary" id="dbExportPaidBtn" type="button">⬇️ Download Paid Entries (Excel)</button></div>
+      <div class="field"><label>&nbsp;</label><button class="btn" id="publishNowBtn" type="button">⬆️ Publish to GitHub now</button></div>
+    </div>
+    <p style="font-family:Arial;font-size:.72rem;color:var(--sub);margin:4px 0 0">Edit any cell directly — tap it to type — and tick the box to mark an entry paid. Changes reach the shared dashboard when published to GitHub (automatic if enabled above, or click <b>Publish to GitHub now</b>).</p>
+  </div>
+  <div class="card">
+    <h3>Horse Database (<span id="dbCount"></span> horses)</h3>
+    <p class="hint-scroll">↔ Swipe sideways to see all columns · tap a cell to edit</p>
+    <div class="scroll tablewrap"><table id="dbTable"><thead><tr><th>#</th><th>Horse</th><th>Class</th><th>Country</th><th>Sex</th><th>DOB</th><th>Sire</th><th>Dam</th><th>Owner</th><th>Owner Email</th><th>Owner Phone</th><th>Paid</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</section>
+
+<section id="inv" class="view">
+  <div class="card no-print">
+    <h3>Invoice Setup</h3>
+    <div class="row3">
+      <div class="field"><label>Owner</label><select id="ownerSelect"></select></div>
+      <div class="field"><label>Default Entry Fee (QAR / horse)</label><input type="number" id="feeInput" value="500"></div>
+      <div class="field"><label>Invoice No.</label><input type="text" id="invNo" value="ASQ2026-001"></div>
+    </div>
+    <div class="row3">
+      <div class="field"><label>Invoice Date</label><input type="date" id="invDate"></div>
+      <div class="field"><label>Phone (auto-fills from Database)</label><input type="text" id="custPhone" placeholder="e.g. +974 5550 4595"></div>
+      <div class="field"><label>E-mail (auto-fills from Database)</label><input type="text" id="custEmail" placeholder="e.g. owner@example.com"></div>
+    </div>
+    <div class="field"><label>Address</label><input type="text" id="custAddr" value="Doha, Qatar"></div>
+    <div class="row3 no-print" style="max-width:640px">
+      <button class="btn" id="printBtn">🖨️ Print / Save as PDF</button>
+      <button class="btn secondary" id="waBtn">💬 WhatsApp (text)</button>
+      <button class="btn secondary" id="waPdfBtn">📎 WhatsApp Invoice (PDF)</button>
+    </div>
+    <div class="row3 no-print" style="max-width:640px;margin-top:10px">
+      <button class="btn secondary" id="exportPaidBtn" type="button">✅ Export Paid Horses</button>
+    </div>
+    <p class="hint-scroll" style="display:block;margin-top:8px" id="waHint"></p>
+  </div>
+
+  <div id="invoiceSheet">
+    <div class="inv-letterhead"><img src="data:image/png;base64,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" alt="Al Shaqab International Arabian Horse Show"></div>
+    <div class="inv-body">
+    <h2>INVOICE</h2>
+    <div class="inv-top">
+      <div class="block">
+        <p><b>Customer</b>: <span id="s_owner"></span></p>
+        <p><b>Address</b>: <span id="s_addr"></span></p>
+        <p><b>Phone</b>: <span id="s_phone"></span></p>
+        <p><b>E-mail</b>: <span id="s_email"></span></p>
+      </div>
+      <div class="block">
+        <p><b>Date</b>: <span id="s_date"></span></p>
+        <p><b>Invoice No</b>: <span id="s_invno"></span></p>
+        <p><b>Show</b>: Al Shaqab International Arabian Horse Show 2026</p>
+      </div>
+    </div>
+    <p>Dear Sir,<br>Please find below the entry fee charges for the horses entered under your name in the above show.</p>
+    <p class="hint-scroll no-print">↔ Swipe sideways to see all columns</p>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>No</th><th>Horse Name</th><th>DOB</th><th>Sire</th><th>Dam</th><th>Class</th><th style="text-align:right">Amount (QAR)</th></tr></thead>
+      <tbody id="invBody"></tbody>
+      <tfoot><tr class="tot-row"><td colspan="6" style="text-align:right">Total Amount in QAR</td><td id="invTotal" style="text-align:right"></td></tr></tfoot>
+    </table>
+    </div>
+    <p style="font-size:.78rem;margin-top:14px">We appreciate if you could settle this balance at your earliest convenience. For any questions concerning this invoice, kindly contact the Show Office.</p>
+    <div class="bank">
+      <p><b>Kindly make all payments payable to:</b></p>
+      <p>Account Name: Al Shaqab - Qatar Foundation</p>
+      <p>Account Number: 0013-024171-055 &nbsp; | &nbsp; Bank: Qatar National Bank &nbsp; | &nbsp; Branch: Corporate Branch</p>
+      <p>Swift Code: QNBAQAQA &nbsp; | &nbsp; IBAN: QA16 QNBA 0000 0000 0013 0241 71055</p>
+    </div>
+    </div>
+  </div>
+</section>
+
+</main>
+<div class="modal-overlay no-print" id="kpiModal" style="display:none">
+  <div class="modal-box">
+    <div class="modal-head"><h3 id="modalTitle"></h3><button class="modal-close" id="modalClose" aria-label="Close" type="button">✕</button></div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+<script>
+const ORIGINAL_HTML = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+if(new URLSearchParams(location.search).get('view')==='dashboard' || location.hash==='#view') document.body.classList.add('viewonly');
+const SHARE_URL = '';
+let HORSES = /*DATA_START*/[{"cls":3,"cn":"Yearling Fillies","hn":"Roudah Al Jazeel","co":"QA","sx":"F","dob":"2025-01-14","col":"Bay","sire":"Rhan Al Shahania","dam":"Carlotta Cj","own":"Al Jazeel Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Nayyla Al Jazeel","co":"QA","sx":"F","dob":"2025-03-03","col":"Bay","sire":"Exagon Os","dam":"D Nashabeyyah","own":"Al Jazeel Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Nina Al Nasser","co":"QA","sx":"F","dob":"2025-02-09","col":"Grey","sire":"Tm Itaipu","dam":"Hattan Al Nasser","own":"Al Nasser Stud - Sheikh Nawaf Bin Nasser Al Thani","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Ghadnana Al Sraiya","co":"QA","sx":"F","dob":"2025-01-12","col":"Grey","sire":"Wadee Al Shaqab","dam":"Alkaydah Al Sraiya","own":"Al Sraiya Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Bessan Al Sraiya","co":"QA","sx":"F","dob":"2025-03-20","col":"Grey","sire":"Excalibur Ea","dam":"Shalfa Al Sraiya","own":"Al Sraiya Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Hala Al Wajba","co":"QA","sx":"F","dob":"2025-02-05","col":"Bay","sire":"Lr Anselmo","dam":"Ss Helen","own":"Al Atheel Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Ghalya Al Thamer","co":"QA","sx":"F","dob":"2025-03-15","col":"Bay","sire":"D Hayel","dam":"Anhar Al Shaqab","own":"Al Atheel Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Jaflah Al Ammar","co":"QA","sx":"F","dob":"2025-03-25","col":"Black","sire":"Copperfield Ora","dam":"Summar Al Ammar","own":"Al Ammar Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Rayana Al Ammar","co":"QA","sx":"F","dob":"2025-04-21","col":"Bay","sire":"Wf Gawin","dam":"Asrar Al Ammar","own":"Al Ammar Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Shomookh Umm Aludham","co":"QA","sx":"F","dob":"2025-03-16","col":"Grey","sire":"Harbi Al Adwan","dam":"Najla Umm Aludham","own":"Mr. Nasser Mohammed M A Al Hajri","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Somood Umm Aludham","co":"QA","sx":"F","dob":"2025-01-17","col":"Grey","sire":"Tm Itaipu","dam":"Najla Umm Aludham","own":"Mr. Mesfer Mohammed Mesfer Al Hajri","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Harba Umm Aludham","co":"QA","sx":"F","dob":"2025-04-13","col":"Grey","sire":"Harbi Al Adwan","dam":"Da Magic Moment","own":"Mr. Nasser Mohammed M A Al Hajri","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Fulla Umm Aludham","co":"QA","sx":"F","dob":"2025-03-04","col":"Grey","sire":"Figaro","dam":"Majdd","own":"Al Ghashamiya Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Aq Oula","co":"QA","sx":"F","dob":"2025-04-25","col":"Bay","sire":"Exagon Os","dam":"Waad Al Yacoub","own":"Al Yacoub Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Rafeea Al Shaqab","co":"QA","sx":"F","dob":"2025-03-09","col":"Grey","sire":"Alexxanderr","dam":"Kahlah Al Shaqab","own":"Al Sada Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Lujain Al Hamama","co":"SA","sx":"F","dob":"2025-04-01","col":"Grey","sire":"Saqaar Alaz","dam":"Shaimaa Alfariss Aa","own":"Sheikh Jassim Saoud A J Al-Thani","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Hiba Mudhar","co":"QA","sx":"F","dob":"2025-03-27","col":"Grey","sire":"Hama Mudhar Mp","dam":"Layali Al Nasser","own":"Sheikh Hamad Ali A Th Al Thani","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Asrar Mudhar","co":"QA","sx":"F","dob":"2025-02-07","col":"Grey","sire":"Rfi Farid","dam":"Ayoush Al Shaqab","own":"Sheikh Hamad Ali A Th Al Thani","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Cady Mudhar","co":"QA","sx":"F","dob":"2025-02-03","col":"Bay","sire":"Exagon Os","dam":"Emira K","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Mashael Mudhar","co":"QA","sx":"F","dob":"2025-01-22","col":"Bay","sire":"D Shakhat","dam":"Shaikha Mudhar","own":"Sheikh Hamad Ali A Th Al Thani","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Mayyas Mudhar","co":"QA","sx":"F","dob":"2025-04-04","col":"Chestnut","sire":"D Shakhat","dam":"Mt Bambina","own":"Mr. Mansoor Ghanim A A  Al-Khayareen","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Sh Rabwah","co":"ZA","sx":"F","dob":"2025-04-10","col":"Grey","sire":"Aj Taj","dam":"Pse Razeelah","own":"Muath Mohammed Abdulkarim Aba Numay","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Es Hoor","co":"SA","sx":"F","dob":"2025-01-23","col":"Bay","sire":"Mutabahi Al Hawajer","dam":"Shmokh Al Haitham","own":"Hamad Mahdi M Alyami","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Shamekha Al Wajba","co":"QA","sx":"F","dob":"2025-01-25","col":"Grey","sire":"Tm Itaipu","dam":"J Shamasi","own":"Al Wajba Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Tswahen Almishraaf","co":"QA","sx":"F","dob":"2025-01-02","col":"Chestnut","sire":"Gazwan Al Sraiya","dam":"Bella Sedona","own":"Al Mishraaf Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Waad Alasl","co":"SA","sx":"F","dob":"2025-08-25","col":"Chestnut","sire":"Melih Al Zobair","dam":"Trussrsha","own":"Mohammed Abdulhaq Abdulwahab Alkhars - Alasl Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Kh Aya","co":"SA","sx":"F","dob":"2025-02-10","col":"Bay","sire":"Raoud Albidayer","dam":"Bw Amjad","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Salwat Al Shaqab","co":"QA","sx":"F","dob":"2025-04-20","col":"Grey","sire":"Harbi Al Adwan","dam":"Marieta Al Shaqab","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Mo Seba","co":"AE","sx":"F","dob":"2025-11-14","col":"Grey","sire":"Edwan Al Zobair","dam":"M.O Muntassira","own":"Ali Mohammed Qamber Hajeeh","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Hk-Bashayir","co":"QA","sx":"F","dob":"2025-01-05","col":"Bay","sire":"Figaro","dam":"Maha Al Sraiya","own":"Mr. Hamad Jumah A S Al-Kaabi","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"A.K.A. Teha","co":"QA","sx":"F","dob":"2025-02-18","col":"Bay","sire":"Dominic M","dam":"Saten","own":"Mr. Khalid Ali A Al-Obaidli","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Jumna Ns","co":"BH","sx":"F","dob":"2025-03-01","col":"Chestnut","sire":"Royal Asad","dam":"Am Nura","own":"Husain Habib Hasan - Al Nassim Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Mathayel Al Athba","co":"QA","sx":"F","dob":"2025-02-10","col":"Bay","sire":"Ghaith Al Zobair","dam":"Lyali Al Athba","own":"Al Athba Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Eishq Erab Alsahra","co":"SA","sx":"F","dob":"2025-04-06","col":"Bay","sire":"Eks Farajj","dam":"Maashogat Erab Al Sahhra","own":"Saad Saleh Ibraheem  Bobshait","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Tamara Alshathliah","co":"SA","sx":"F","dob":"2025-04-01","col":"Bay","sire":"Mutabahi Al Hawajer","dam":"Cw Eleganza","own":"Abdulaziz Abdulrahman Alothman","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Sirajj Al Jazeel","co":"QA","sx":"M","dob":"2025-01-11","col":"Chestnut","sire":"D Shakhat","dam":"Royal Titania As","own":"Al Jazeel Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Rayq Al Shaqab","co":"QA","sx":"M","dob":"2025-03-20","col":"Grey","sire":"Wf Gawin","dam":"Princess Marwan Rc","own":"Mr. Nasser Salman N E Al-Mesallam","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Lahab Al Nasser","co":"QA","sx":"M","dob":"2025-02-02","col":"Grey","sire":"D Seraj","dam":"Leena Al Nasser","own":"Sheikh Khalid Nasser A A Al-Thani","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Haddaj Al Sraiya","co":"QA","sx":"M","dob":"2025-03-15","col":"Grey","sire":"Harbi Al Adwan","dam":"Alkaydah Al Sraiya","own":"Al Sraiya Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Harib Al Wajba","co":"QA","sx":"M","dob":"2025-04-01","col":"Grey","sire":"Harbi Al Adwan","dam":"Mb Doha","own":"Al Atheel Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Nashwan Al Ammar","co":"QA","sx":"M","dob":"2025-03-27","col":"Grey","sire":"Halul Al Khor","dam":"Al Mubarkia Al Ammar","own":"Al Ammar Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Shaheen Al Mohannad","co":"QA","sx":"M","dob":"2025-11-11","col":"Grey","sire":"Rajeh Al Adwan","dam":"Zumurruda Al Nasser","own":"Abdullah Saad Hilal Al Mohannadi","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Winchester Al Jood","co":"QA","sx":"M","dob":"2025-02-02","col":"Chestnut","sire":"D Wannas","dam":"Shurouq Al Nasser","own":"Al Sada  Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Farr'A E'Thanya","co":"QA","sx":"M","dob":"2025-05-04","col":"Bay","sire":"Aj Radman","dam":"Farfalla Hhc","own":"Al Hamama Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Ghaith Al Nasser","co":"QA","sx":"M","dob":"2025-03-21","col":"Grey","sire":"Tm Itaipu","dam":"Jolien Aljassimya","own":"Sheikh Jassim Saoud A J Al-Thani","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"H Ghaith","co":"QA","sx":"M","dob":"2025-05-01","col":"Bay","sire":"Ghaith Al Zobair","dam":"Faidh Al Jfoul","own":"Al Henzab Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"H-Ornes","co":"QA","sx":"M","dob":"2025-01-14","col":"Bay","sire":"Mutabahi Al Hawajer","dam":"Mystica Soraya","own":"Al Henzab Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Tael Al Jood","co":"QA","sx":"M","dob":"2025-01-02","col":"Grey","sire":"Talaal Serondella","dam":"Elkymia Al Jood","own":"Al Dawasir Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Arkan Al Dawasir","co":"BH","sx":"M","dob":"2025-02-20","col":"Chestnut","sire":"Sq Wasim","dam":"Aj Nomah","own":"Al Dawasir Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Lusail Mudhar","co":"QA","sx":"M","dob":"2025-02-03","col":"Bay","sire":"Exagon Os","dam":"Mb Querida","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Bandar Mudhar","co":"QA","sx":"M","dob":"2025-02-12","col":"Grey","sire":"Exagon Os","dam":"Doha Mudhar Hvp","own":"Sheikh Hamad Ali A Th Al Thani","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Dukhan Mudhar","co":"QA","sx":"M","dob":"2025-01-17","col":"Grey","sire":"Medan Al Shaqab","dam":"Soufiya Al Shaqab","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Najd Sh","co":"QA","sx":"M","dob":"2025-01-18","col":"Bay","sire":"Sa Faez Simbad","dam":"Sacarina O","own":"Mr. Nasser Misfer H A Al-Hajri","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Sharar Al Jazeel","co":"QA","sx":"M","dob":"2025-03-15","col":"Bay","sire":"D Shakhat","dam":"Emv Jyvanna El Madan","own":"Ma Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Katheer Al Ramad","co":"QA","sx":"M","dob":"2025-02-04","col":"Bay","sire":"Wf Gawin","dam":"Autumn Wind Mtc","own":"Alnasseria Farm","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Nader Al Wajba","co":"QA","sx":"M","dob":"2025-05-12","col":"Grey","sire":"Baz Aljassimya","dam":"Nourah Al Khalediah","own":"Al Wajba Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Sahm Alboraq","co":"QA","sx":"M","dob":"2025-03-16","col":"Bay","sire":"Sultan Al Zobara","dam":"Retaj Al Shaqab","own":"Al Boraq Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Raad Alboraq","co":"QA","sx":"M","dob":"2025-03-20","col":"Grey","sire":"Sultan Al Zobara","dam":"Sama Alboraq","own":"Al Boraq Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Kh Asad","co":"SA","sx":"M","dob":"2025-02-20","col":"Grey","sire":"El Tino","dam":"Sultana Al Jabriya","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Razi Al Bahya","co":"AE","sx":"M","dob":"2025-02-19","col":"Grey","sire":"Aj Kafu","dam":"Aj Rafiqa","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Najm Al Reeh","co":"QA","sx":"M","dob":"2025-04-01","col":"Bay","sire":"D Shajei","dam":"Caressa Svb","own":"Al Dhabi Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Wafi Al Jood","co":"QA","sx":"M","dob":"2025-11-04","col":"Bay","sire":"D Wannas","dam":"Aj Bahja","own":"Hassan Khalid S G Al-Ghanim","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Wahaj Al Yusufiya","co":"QA","sx":"M","dob":"2025-03-15","col":"Grey","sire":"Ash'Al Al E'Zz","dam":"Mouhsina Al Shaqab","own":"Al Yusufiya Arabians","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"El Cairo Ea","co":"ES","sx":"M","dob":"2025-01-16","col":"Grey","sire":"Shanghai Ea","dam":"Ebony E.A.","own":"Mr. Mostafa Abdulrahman Rajab - Al Hayat Stud","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Yara Al Nasser","co":"BE","sx":"F","dob":"2024-02-26","col":"Grey","sire":"E.S. Harir","dam":"Ashadiya","own":"Sh. Nawaf Bin Nasser Al Thani - Al Nasser Stud","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Ikram Al Nasser","co":"QA","sx":"F","dob":"2024-04-04","col":"Chestnut","sire":"Lr Solo Mio","dam":"Tahseen Al Zobair","own":"Al Nasser Stud - Sheikh Nawaf Bin Nasser Al Thani","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Aryam Al Sraiya","co":"QA","sx":"F","dob":"2024-05-25","col":"Grey","sire":"Excalibur Ea","dam":"Reem Al Sraiya","own":"Al Sraiya Stud","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Alia Al Khor K","co":"BR","sx":"F","dob":"2024-04-15","col":"Grey","sire":"Gt Shardh","dam":"Aaliyah K","own":"Al Khor Stud","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"D Shagrah","co":"QA","sx":"F","dob":"2024-01-01","col":"Chestnut","sire":"D Fannan","dam":"D Ghamsharah","own":"Al Khor Stud","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Shihanah Kl","co":"QA","sx":"F","dob":"2024-04-27","col":"Grey","sire":"D Seraj","dam":"Dalma Kl","own":"Kaheel Stud","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Mz Afaal","co":"AE","sx":"F","dob":"2024-01-31","col":"Bay","sire":"Al Aryam Hasheem","dam":"Qr Andrea","own":"Mr. Mesfer Mohammed Mesfer Al Hajri","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Rds Remas","co":"BE","sx":"F","dob":"2024-06-09","col":"Grey","sire":"Ghaly Al Hawajer","dam":"Muranas Azeezah","own":"Al Yacoub Stud","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Tsaheel Al Shaqab","co":"QA","sx":"F","dob":"2024-03-21","col":"Grey","sire":"Excalibur Ea","dam":"Sarrah Al Jassimya","own":"Sheikh Jassim Saoud A J Al-Thani","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Antonina Cme","co":"US","sx":"F","dob":"2024-02-14","col":"Bay","sire":"Aria Rakeem","dam":"Sweet La Vita","own":"Muath Mohammed Abdulkarim Aba Numay","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"D Wana","co":"SA","sx":"F","dob":"2024-01-24","col":"Chestnut","sire":"Exxalt","dam":"D Heba","own":"Muath Mohammed Abdulkarim Aba Numay","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Marseille","co":"KW","sx":"F","dob":"2024-03-25","col":"Bay","sire":"D Nather","dam":"Sophia","own":"Mr. Mohammad Faleh Shafi Alajmi","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Sumu Al Mushlah","co":"QA","sx":"F","dob":"2024-02-10","col":"Bay","sire":"Raad Lembarak","dam":"Wc Mariellaa","own":"Mr. Abdulaziz Nasser M N Al-Khalifa","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Kh Malath","co":"SA","sx":"F","dob":"2024-02-01","col":"Grey","sire":"Royal Asad","dam":"Wj Malak","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Beisan Al Bahya","co":"AE","sx":"F","dob":"2024-02-18","col":"Grey","sire":"Aj Marzan","dam":"Aj Baynunah","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Radifa Al Shaqab","co":"QA","sx":"F","dob":"2024-10-30","col":"Bay","sire":"Wf Gawin","dam":"Irinah","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Mt Bateel","co":"SA","sx":"F","dob":"2024-02-05","col":"Bay","sire":"D Shakhat","dam":"Badawia Al Muawd","own":"Khalid Abdulaziz Almousa","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Makbola Al Shaqab","co":"QA","sx":"F","dob":"2024-12-30","col":"Grey","sire":"Berlin Mp","dam":"Nachmiya Al Shaqab","own":"Al-Salimya Stud","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Ey Manara","co":"QA","sx":"F","dob":"2024-04-07","col":"Grey","sire":"Excalibur Ea","dam":"Maaly","own":"Mr. Khalifa Ali Kh Kh Al-Suwaidi","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Napa Alnarh","co":"SA","sx":"F","dob":"2024-06-21","col":"Grey","sire":"Ferdan","dam":"Al Aryam Jenana","own":"Mohamed Jaber Ayesh Ali Al Humaid","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Dstoor Al Sraiya","co":"QA","sx":"M","dob":"2024-06-22","col":"Grey","sire":"Excalibur Ea","dam":"Anoud Al Sraiya","own":"Al Sraiya Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Zenith Al Shahania","co":"QA","sx":"M","dob":"2024-01-31","col":"Bay","sire":"Lr Solo Mio","dam":"Anwar Al Shahania","own":"Al Obayyah Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Ob Aseel","co":"QA","sx":"M","dob":"2024-04-10","col":"Bay","sire":"Ghaith Al Zobair","dam":"Khatoon Al Shaqab","own":"Al Obayyah Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Dandon Kl","co":"QA","sx":"M","dob":"2024-05-02","col":"Grey","sire":"Lr Solo Mio","dam":"Motatra Al Enaya","own":"Kaheel Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Shakhat Al Shahania","co":"QA","sx":"M","dob":"2024-03-31","col":"Bay","sire":"Excalibur Ea","dam":"Saherha Al Shahania","own":"Fahad Juma Al-Muhannadi","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Barq Umm Aludham","co":"QA","sx":"M","dob":"2024-04-20","col":"Grey","sire":"Ghaith Al Zobair","dam":"Aldana Umm Aludham","own":"Essa Juma R D Al-Muhannadi","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Shaqran Aljassimya","co":"QA","sx":"M","dob":"2024-04-07","col":"Chestnut","sire":"Lehon","dam":"Jazanh Aljassimya","own":"Mr. Mohammed Saad Al-Naimi","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Yazeed Mudhar","co":"QA","sx":"M","dob":"2024-01-16","col":"Grey","sire":"Rfi Farid","dam":"Doha Mudhar Hvp","own":"Sheikh Hamad Ali A Th Al Thani","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Zsq Azzam","co":"QA","sx":"M","dob":"2024-11-16","col":"Grey","sire":"Miqdam Gulfa","dam":"Ma Deva","own":"Mohammed Ghanim M K Al Hajri","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Hamza Al Jaham","co":"QA","sx":"M","dob":"2024-04-01","col":"Grey","sire":"Excalibur Ea","dam":"Bidayat Ibn Salamah","own":"Al Jaham Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Mh Lazaz","co":"QA","sx":"M","dob":"2024-02-25","col":"Grey","sire":"Shaman Al Zobara","dam":"Kholood Al Shaqab","own":"Mh Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Bahir Aa","co":"QA","sx":"M","dob":"2024-03-10","col":"Grey","sire":"S.M.A. Magic One","dam":"Nouf Aa","own":"Mr. Ahmed Abdulla A A Al-Mohannadi","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Aser Althamryia","co":"SA","sx":"M","dob":"2024-04-04","col":"Grey","sire":"Aj Faik","dam":"Meral Bd","own":"Mr. Essa Ali E I Al-Baloshi","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Arslan","co":"KW","sx":"M","dob":"2024-05-23","col":"Grey","sire":"Eks Farajj","dam":"Royal Eliza","own":"Alaseelah Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Sayer Al Bahya","co":"QA","sx":"M","dob":"2024-11-11","col":"Grey","sire":"Shanghai Ea","dam":"Aj Salwanah","own":"Al Mashrab Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Rakan Aljumail","co":"QA","sx":"M","dob":"2024-03-07","col":"Bay","sire":"Sa Faez Simbad","dam":"Assayla Al Shaqab","own":"Al Boraq Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Tawiq Dirgham","co":"SA","sx":"M","dob":"2024-01-01","col":"Chestnut","sire":"S M A Magic One","dam":"Taima Athbah","own":"Mohammed Abdulhaq Abdulwahab Alkhars/Alasl Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Shhab Al Zobair","co":"DE","sx":"M","dob":"2024-10-06","col":"Bay","sire":"Eks Farajj","dam":"Nawader Al Zobair","own":"Abdullah Meishal Almeishal","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Fahad Al Zobair","co":"QA","sx":"M","dob":"2024-02-05","col":"Bay","sire":"Mazyoun Al Bidayer","dam":"Toflah Al Zobair","own":"Aylan Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Ar Ghaith","co":"SA","sx":"M","dob":"2024-05-28","col":"Bay","sire":"Ghaith Al Zobair","dam":"Mahbuba Al Muawd","own":"Waleed Khalid Ali Almajed","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Al Wasm Ib","co":"SA","sx":"M","dob":"2024-10-25","col":"Grey","sire":"Karem Al Bahya","dam":"Rasmah","own":"Fahad Abdullah Fahad Dakhel Alhaqbani Aldosari","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Bayan Al Yasser","co":"EG","sx":"M","dob":"2024-04-25","col":"Bay","sire":"Amir Al Yasser","dam":"Badreya  Al Yasser","own":"Al Yasser Stud","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"D Hasbaa","co":"QA","sx":"F","dob":"2023-01-20","col":"Grey","sire":"Aj Ajban","dam":"D Jawharah","own":"Al Khor Stud","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Fay Aljassimya","co":"QA","sx":"F","dob":"2023-06-11","col":"Chestnut","sire":"Picasso Di Mar (It)","dam":"Fareeda Al Mar","own":"Al Hamama Stud","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Hessa Al Salem","co":"QA","sx":"F","dob":"2023-03-10","col":"Chestnut","sire":"Taiar Al Shaqab","dam":"Rihab Al Shaqab","own":"Al Salem Stud","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Rose Al Shahania","co":"QA","sx":"F","dob":"2023-02-27","col":"Bay","sire":"Rhan Al Shahania","dam":"Saherha Al Shahania","own":"Al Jaham Stud","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Haifa Al Tinhat","co":"SA","sx":"F","dob":"2023-03-25","col":"Grey","sire":"Mutabahi Al Hawajer","dam":"Noorah Al Tinhat","own":"Al Ghashamiya Stud","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Asfoorat Al Dana","co":"QA","sx":"F","dob":"2023-11-04","col":"Grey","sire":"Ghalab Al Shaqab","dam":"Asfoorat Al Safinat","own":"Al Dana Stud","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Emtenan Al Shahania","co":"QA","sx":"F","dob":"2023-03-19","col":"Bay","sire":"Rhan Al Shahania","dam":"Abha Qalams","own":"Mr. Ibrahim Issa M H Alfadala","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Jamrat Al Abdyah","co":"SA","sx":"F","dob":"2023-04-24","col":"Chestnut","sire":"Royal Asad","dam":"Sali Alenaya","own":"Rayan Abdulrahman B Alsayqal-Alsayaqul Stud","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Gezlan Al Saad","co":"QA","sx":"F","dob":"2023-10-05","col":"Bay","sire":"Gazwan Al Sraiya","dam":"Shoug Umm Aludham","own":"Al Saad Stud","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"T A Ndawi","co":"SA","sx":"F","dob":"2023-03-01","col":"Chestnut","sire":"Aj Faik","dam":"Wadhhah Altaflan","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Sawsan Al Shaqab","co":"QA","sx":"F","dob":"2023-03-15","col":"Grey","sire":"Eks Farajj","dam":"Ofw Emmalee","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Qamrah Alnahiy","co":"QA","sx":"F","dob":"2023-03-07","col":"Bay","sire":"Wadee Al Shaqab","dam":"Kadi Al Shaqab","own":"Jaralla Mohammed S A Al-Marri","email":"","phone":""},{"cls":8,"cn":"Colts 3 Years Old","hn":"Azzam Umm Aludham","co":"QA","sx":"M","dob":"2023-01-10","col":"Bay","sire":"Badiea Al Nasser","dam":"Ahood Umm Aludham","own":"Mr. Nasser Mohammed M A Al Hajri","email":"","phone":""},{"cls":8,"cn":"Colts 3 Years Old","hn":"Elr Farouk Aa","co":"BE","sx":"M","dob":"2023-06-21","col":"Bay","sire":"Ghaly Al Hawajer","dam":"Fayrooz Aa","own":"Al Yacoub Stud","email":"","phone":""},{"cls":8,"cn":"Colts 3 Years Old","hn":"Damascus Pcf","co":"US","sx":"M","dob":"2023-03-10","col":"Bay","sire":"Dominic M","dam":"Aliyah Vision Pcf","own":"Mohammed Saad K A Al-Naimi","email":"","phone":""},{"cls":8,"cn":"Colts 3 Years Old","hn":"Santorini O","co":"SE","sx":"M","dob":"2023-05-01","col":"Grey","sire":"Wf Gawin","dam":"Gazals Serina","own":"Al Dawasir Stud","email":"","phone":""},{"cls":8,"cn":"Colts 3 Years Old","hn":"Sa Al Muthaqaf","co":"QA","sx":"M","dob":"2023-08-23","col":"Grey","sire":"Fahad Al Rayyan","dam":"Jawaher Al Naif","own":"Salman Jassem Al Darwish","email":"","phone":""},{"cls":8,"cn":"Colts 3 Years Old","hn":"Ghayyath Al Shaqab","co":"QA","sx":"M","dob":"2023-04-24","col":"Chestnut","sire":"Eks Farajj","dam":"Aijana","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":8,"cn":"Colts 3 Years Old","hn":"Kh Habs","co":"SA","sx":"M","dob":"2023-04-07","col":"Bay","sire":"Royal Asad","dam":"Dhma Alaainah","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":8,"cn":"Colts 3 Years Old","hn":"Meshal The Line","co":"SA","sx":"M","dob":"2023-05-10","col":"Bay","sire":"Ghaith Al Zobair","dam":"D Gezaila","own":"Abdullah Meishal Almeishal","email":"","phone":""},{"cls":8,"cn":"Colts 3 Years Old","hn":"Ghazi Al Sraiya","co":"QA","sx":"M","dob":"2023-04-19","col":"Chestnut","sire":"Gazwan Al Sraiya","dam":"Benedetta Inz","own":"Al Mushlah Stud","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"D Nashabeyyah","co":"AE","sx":"F","dob":"2021-03-27","col":"Grey","sire":"Excalibur Ea","dam":"D Muntaha","own":"Al Jazeel Stud","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Taima Al Nasser","co":"QA","sx":"F","dob":"2022-01-07","col":"Grey","sire":"Excalibur Ea","dam":"Loulou Al Nasser","own":"Al Nasser Stud - Sheikh Nawaf Bin Nasser Al Thani","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Jelsy Ma","co":"DE","sx":"F","dob":"2022-04-11","col":"Grey","sire":"Aj Nawash","dam":"Joleen Ma","own":"Al Khor Stud","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Bahiya S B M","co":"QA","sx":"F","dob":"2020-03-03","col":"Bay","sire":"Fa El Rasheem","dam":"Muranas Je Taime","own":"Nasser Mohammed M A Al Hajri","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"D Wedad","co":"AE","sx":"F","dob":"2022-02-21","col":"Chestnut","sire":"Fa El Rasheem","dam":"D Wasayef","own":"Mr. Nasser Mohammed M A Al Hajri","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Sabha Al Khor","co":"QA","sx":"F","dob":"2021-10-12","col":"Bay","sire":"Halul Al Khor","dam":"Rayyanat Al Khor","own":"Al Dawasir Stud","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Farida Mudhar","co":"QA","sx":"F","dob":"2022-04-02","col":"Bay","sire":"Farid Al Hawajer","dam":"A. L. R. Aseela","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Shaikha Mudhar","co":"QA","sx":"F","dob":"2022-01-10","col":"Bay","sire":"Marajj","dam":"Nahawand Al Zobair","own":"Sheikh Hamad Ali A Th Al Thani","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Bashayer Al Bawadi","co":"QA","sx":"F","dob":"2020-01-21","col":"Grey","sire":"Al Milan","dam":"Just This Once","own":"Al Bawadi Stud","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Mayaan Al Laheef","co":"QA","sx":"F","dob":"2021-03-06","col":"Chestnut","sire":"Fa Starlight","dam":"Maharaani","own":"Al Laheef Stud","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Meznah Almuawd","co":"QA","sx":"F","dob":"2022-02-14","col":"Grey","sire":"Fuerte","dam":"Mira Des Alpes","own":"Albayariq Stud","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Lulu Alriffa","co":"SA","sx":"F","dob":"2021-06-01","col":"Chestnut","sire":"Aaser Athbah","dam":"Darjah Athbah","own":"Rayan Abdulrahman B Alsayqal","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Mozn Albadr","co":"AE","sx":"F","dob":"2021-01-27","col":"Grey","sire":"S.M.A. Magic One","dam":"Gaja Luna","own":"Ahmad Saleh Moshref","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Ferdous Al Nawader","co":"BH","sx":"F","dob":"2022-01-20","col":"Grey","sire":"Mushtabah Al Zobair","dam":"D Nameerah","own":"Al Nawader Arabians (Bh)","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Bint Marzan","co":"QA","sx":"F","dob":"2022-01-02","col":"Grey","sire":"Aj Marzan","dam":"Aj Dina","own":"Ahmad Abdulla A A Al-Kuwari","email":"","phone":""},{"cls":12,"cn":"Stallions 4-6 Years Old","hn":"Omeir Al Sraiya","co":"QA","sx":"M","dob":"2022-05-29","col":"Bay","sire":"Amir Al Reeh","dam":"Shalfa Al Sraiya","own":"Al Sraiya Stud","email":"","phone":""},{"cls":12,"cn":"Stallions 4-6 Years Old","hn":"Jowel Mm","co":"FR","sx":"M","dob":"2022-04-27","col":"Bay","sire":"Jewel Rc","dam":"Haifa Al Adeyat","own":"Al Obayyah Stud","email":"","phone":""},{"cls":12,"cn":"Stallions 4-6 Years Old","hn":"Aj Tayam","co":"AE","sx":"M","dob":"2021-10-28","col":"Bay","sire":"Antaris Os","dam":"Aj Tarim","own":"Mr. Nasser Mohammed M A Al Hajri","email":"","phone":""},{"cls":12,"cn":"Stallions 4-6 Years Old","hn":"Bahi Al Jaham","co":"QA","sx":"M","dob":"2020-11-10","col":"Bay","sire":"Badiea Al Nasser","dam":"Brea Ea","own":"Al Jaham Stud","email":"","phone":""},{"cls":12,"cn":"Stallions 4-6 Years Old","hn":"Faris Al Nasiat","co":"AE","sx":"M","dob":"2021-12-19","col":"Grey","sire":"Emerald J","dam":"Aj Farha","own":"Al Dana Stud","email":"","phone":""},{"cls":12,"cn":"Stallions 4-6 Years Old","hn":"D Serdah","co":"SA","sx":"M","dob":"2021-01-13","col":"Chestnut","sire":"D Seraj","dam":"D Nawal","own":"Essam Abu Bakur Ahmad Almalayo","email":"","phone":""},{"cls":12,"cn":"Stallions 4-6 Years Old","hn":"Kahil Al Khuwair","co":"QA","sx":"M","dob":"2022-12-01","col":"Grey","sire":"Ghazi Al Nasser","dam":"Goot Al Shaqab","own":"Al Khuwair Stud","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"Alkaydah Al Sraiya","co":"QA","sx":"F","dob":"2019-06-24","col":"Grey","sire":"Naseem Al Rashediah","dam":"Makhida","own":"Al Sraiya Stud","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"Najla Umm Aludham","co":"QA","sx":"F","dob":"2017-01-06","col":"Grey","sire":"Wadee Al Shaqab","dam":"Da Magic Moment","own":"Mr. Nasser Mohammed Mesfer Al Hajri","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"D Fala","co":"AE","sx":"F","dob":"2016-02-25","col":"Grey","sire":"Emerald J","dam":"Fer Fiera Blanca","own":"Al Salem Stud","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"Zahra Al Yasrah","co":"QA","sx":"F","dob":"2016-03-04","col":"Grey","sire":"Wadee Al Shaqab","dam":"Bellatrix","own":"Al Yasrah Stud","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"Kholood Al Shaqab","co":"QA","sx":"F","dob":"2017-12-22","col":"Grey","sire":"Wh Justice","dam":"Rhr Vallacontessa","own":"Mh Stud","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"Ag Basma","co":"SA","sx":"F","dob":"2017-07-27","col":"Grey","sire":"Nahar Al Rashediah","dam":"F.E.S Chilly","own":"Muath Mohammed Abdulkarim Aba Numay","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"Anbara Al Shaqab","co":"QA","sx":"F","dob":"2018-12-10","col":"Grey","sire":"Shagran Al Nasser","dam":"Shalha Al Shaqab","own":"Altuwaim Stud","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"D Manawy","co":"SA","sx":"F","dob":"2017-10-24","col":"Bay","sire":"Fa El Rasheem","dam":"D Muna","own":"Hamad Mahdi M Alyami","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"Kiara Aljassimyya","co":"US","sx":"F","dob":"2017-01-05","col":"Grey","sire":"Equator","dam":"Karinena Dakar","own":"Raed Saad Nasser Aldaghri","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"Najla Athbah","co":"BH","sx":"F","dob":"2019-05-27","col":"Grey","sire":"Shanghai Ea","dam":"Treasure Nabila Jq","own":"Mr Ali Abdali Fakharawi - Al Nassim Stud","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"D Aasaleyyah","co":"AE","sx":"F","dob":"2018-02-25","col":"Chestnut","sire":"Fa El Rasheem","dam":"Elle Flamenca","own":"Mostafa Abdulrahman Rajab","email":"","phone":""},{"cls":13,"cn":"Stallions 7-10 Years Old","hn":"Badi Athbah","co":"BE","sx":"M","dob":"2016-02-08","col":"Bay","sire":"Eks Alihandro","dam":"Fedora Rg","own":"Al Jazeel Stud","email":"","phone":""},{"cls":13,"cn":"Stallions 7-10 Years Old","hn":"Kanz Lnj","co":"SA","sx":"M","dob":"2018-04-04","col":"Bay","sire":"Kanz Al Bidayer","dam":"Fadya Lnj","own":"Hisham Abdullah Wakeel Alshaikh","email":"","phone":""},{"cls":11,"cn":"Mares 11+ Years Old","hn":"Farona","co":"DE","sx":"F","dob":"2011-03-31","col":"Grey","sire":"Al Milan","dam":"Farida Bint Khidar","own":"Mr. Nasser Mohammed M A Al Hajri","email":"","phone":""},{"cls":11,"cn":"Mares 11+ Years Old","hn":"Abha Al Hamad","co":"KW","sx":"F","dob":"2015-10-10","col":"Grey","sire":"Aj Dhaen Al Shaaba","dam":"H Elana H","own":"Mr. Khalid Meqbil F F Alqahtani","email":"","phone":""},{"cls":11,"cn":"Mares 11+ Years Old","hn":"D Shatha","co":"QA","sx":"F","dob":"2015-02-20","col":"Grey","sire":"Rfi Farid","dam":"D Sahabah","own":"Al Salem Stud","email":"","phone":""},{"cls":11,"cn":"Mares 11+ Years Old","hn":"Fs Venezuela","co":"SA","sx":"F","dob":"2013-02-15","col":"Chestnut","sire":"Vervaldee","dam":"Fs Madeline","own":"Muath Mohammed Abdulkarim Aba Numay","email":"","phone":""},{"cls":11,"cn":"Mares 11+ Years Old","hn":"Jumana Del Palazzotto","co":"KW","sx":"F","dob":"2014-01-26","col":"Grey","sire":"Wh Justice","dam":"Zb Lamante","own":"Raed Saad Nasser Aldaghri","email":"","phone":""},{"cls":11,"cn":"Mares 11+ Years Old","hn":"Bint Sultan","co":"QA","sx":"F","dob":"2015-02-03","col":"Grey","sire":"Sultan Al Shaqab","dam":"As Michel","own":"Al Adeed Stud","email":"","phone":""},{"cls":14,"cn":"Stallions 11+ Years Old","hn":"Lammah Al Naif","co":"QA","sx":"M","dob":"2013-01-27","col":"Grey","sire":"Fadi Al Shaqab","dam":"Batoul Al Naif","own":"Al Aswadiyah Stud","email":"","phone":""},{"cls":14,"cn":"Stallions 11+ Years Old","hn":"Baher Al Shaqab","co":"QA","sx":"M","dob":"2014-06-09","col":"Bay","sire":"Kahil Al Shaqab","dam":"Vanessa Al Shaqab","own":"Alnasseria Farm","email":"","phone":""},{"cls":14,"cn":"Stallions 11+ Years Old","hn":"Zain Al Thumama","co":"QA","sx":"M","dob":"2015-03-01","col":"Bay","sire":"Wadee Al Shaqab","dam":"Elle Kaliyah","own":"Al Boraq Stud","email":"","phone":""},{"cls":14,"cn":"Stallions 11+ Years Old","hn":"Just Of Glory V","co":"PL","sx":"M","dob":"2012-04-28","col":"Grey","sire":"Wh Justice","dam":"Bess-Gloria","own":"Nasser Khaled Nasser Aludail","email":"","phone":""},{"cls":14,"cn":"Stallions 11+ Years Old","hn":"Falah Al Shaqab","co":"IT","sx":"M","dob":"2013-05-17","col":"Chestnut","sire":"Fadi Al Shaqab","dam":"Joseph Just Emotion","own":"Al Adeed Stud","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Ghala Al Nasser","co":"QA","sx":"F","dob":"2026-02-14","col":"Bay","sire":"Ghaly Al Hawajer","dam":"Arwa Al Nasser","own":"Al Nasser Stud - Sheikh Nawaf Bin Nasser Al Thani","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Bayan Al Nasser","co":"QA","sx":"F","dob":"2026-02-20","col":"Grey","sire":"Baz Aljassimya","dam":"Bshaier Al Nasser","own":"Al Nasser Stud - Sheikh Nawaf Bin Nasser Al Thani","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Diyala Al Nasser","co":"QA","sx":"F","dob":"2026-03-17","col":"Grey","sire":"Tm Itaipu","dam":"Hattan Al Nasser","own":"Al Nasser Stud - Sheikh Nawaf Bin Nasser Al Thani","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Lina Mudhar","co":"QA","sx":"F","dob":"2026-03-15","col":"Grey","sire":"Shiraz De Lafon (Fr)","dam":"A.L.R. Aseela","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Katara Mudhar","co":"QA","sx":"F","dob":"2026-01-25","col":"Bay","sire":"Ghaly Al Hawajer","dam":"Rodeena Al Zobair","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Lamia Mudhar","co":"QA","sx":"F","dob":"2026-01-18","col":"Grey","sire":"Shiraz De Lafon (Fr)","dam":"Sabha Mudhar","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Jasmine Mudhar","co":"QA","sx":"F","dob":"2026-01-15","col":"Grey","sire":"Amaar","dam":"Shaikha Mudhar","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Sakhiyah Al Ammar (Qa)","co":"QA","sx":"F","dob":"2026-02-10","col":"Bay","sire":"Badiea Al Nasser","dam":"Al Ammaria Al Ammar","own":"Alammar Stud","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Almaha Umm Aludham","co":"QA","sx":"F","dob":"2026-02-05","col":"Bay","sire":"Aj Tayam","dam":"Mzoon Al Diriyah","own":"Mesfer Mohammed Al-Hajri - Umm Aludham Stud (Qa)","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Mayar Al Ammar (Qa)","co":"QA","sx":"F","dob":"2026-04-22","col":"Chestnut","sire":"D Tumooh","dam":"Asrar Al Ammar","own":"Al Ammar Stud","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Dakhtanus","co":"QA","sx":"F","dob":"2026-01-07","col":"Grey","sire":"Coperfield Ora","dam":"Kadi Al Shaqab","own":"Mr. Jaralla Mohammed S A Al-Marri","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Mh Masah","co":"QA","sx":"F","dob":"2026-01-05","col":"Grey","sire":"Berlin Mp","dam":"Aysha Al Zobara","own":"Mh Stud","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Jaleela Al Jaham","co":"QA","sx":"F","dob":"2026-02-24","col":"Grey","sire":"Rajeh Al Adwan","dam":"Marwa Al Kheesa","own":"Al Jaham Stud","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Nooran Mudhar","co":"QA","sx":"F","dob":"2026-02-06","col":"Bay","sire":"Vitorio To","dam":"Farida Mudhar","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Naflah Al Ammar","co":"QA","sx":"F","dob":"2026-02-20","col":"Bay","sire":"Halul Al Khor","dam":"Tajweed Al Shaqab","own":"Khalifa Abdulaziz K A Al Dosari","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Ajayeb Sh","co":"QA","sx":"F","dob":"2026-03-01","col":"Grey","sire":"Berlin Mp","dam":"Shareqat Al E'Zz","own":"Mr. Nasser Misfer H A Al-Hajri","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Wilaya Al Shakra","co":"QA","sx":"F","dob":"2026-03-12","col":"Bay","sire":"Azzam Al Sraiya","dam":"El Masoufah","own":"Al Shakra Stud","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Noora Hleetan (Qa)","co":"QA","sx":"F","dob":"2026-03-15","col":"Bay","sire":"Ghaly Al Hawajer","dam":"Rawdah Al Watan","own":"Hleetan Stud","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Milhat Najd","co":"QA","sx":"F","dob":"2026-01-30","col":"Bay","sire":"Lehon","dam":"Bella Romantica Ga","own":"Najd  Stud","email":"","phone":""},{"cls":2,"cn":"Colt Foals","hn":"Sayaf Al Nasser","co":"QA","sx":"M","dob":"2026-01-17","col":"Grey","sire":"Tm Itaipu","dam":"Bdour Al Nasser","own":"Al Hamama Stud","email":"","phone":""},{"cls":2,"cn":"Colt Foals","hn":"Bashir Mudhar","co":"QA","sx":"M","dob":"2026-04-25","col":"Grey","sire":"Medan Al Shaqab","dam":"Shalwa Al Shaqab","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":2,"cn":"Colt Foals","hn":"Ghaly Mudhar","co":"QA","sx":"M","dob":"2026-03-10","col":"Bay","sire":"Ghaly Al Hawajer","dam":"Farida Mudhar","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":2,"cn":"Colt Foals","hn":"Gazal Mudhar","co":"QA","sx":"M","dob":"2026-01-24","col":"Bay","sire":"Rfi Unique","dam":"Shaikha Mudhar","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":2,"cn":"Colt Foals","hn":"Ob Saham","co":"QA","sx":"M","dob":"2026-04-03","col":"Bay","sire":"Jowel Mm","dam":"Khatoon Al Shaqab","own":"Al Obayyah Stud","email":"","phone":""},{"cls":2,"cn":"Colt Foals","hn":"Ayyal Umm Aludham","co":"QA","sx":"M","dob":"2026-01-02","col":"Bay","sire":"Aj Tayam","dam":"Najla Umm Aludham","own":"Mr Nasser Mohammed Misfer Al Hajiri","email":"","phone":""},{"cls":2,"cn":"Colt Foals","hn":"Laith Umm Aludham","co":"QA","sx":"M","dob":"2026-04-02","col":"Bay","sire":"Lehon (It)","dam":"Al Jazi Umm Aludham","own":"Mr Nasser Mohammed Misfer Al Hajiri","email":"","phone":""},{"cls":2,"cn":"Colt Foals","hn":"Fahad Al Hamdan","co":"QA","sx":"M","dob":"2026-02-17","col":"Chestnut","sire":"Halul Al Khor","dam":"Rk Neom","own":"Al Hamdan Stud","email":"","phone":""},{"cls":2,"cn":"Colt Foals","hn":"Aq Sahm","co":"QA","sx":"M","dob":"2026-02-06","col":"Bay","sire":"Aj Nabhan","dam":"Aahd Al Yacoub","own":"Al Yacoub Stud","email":"","phone":""}]/*DATA_END*/.map(h=>({...h, paid: !!h.paid}));
+
+// ---------- GitHub sync (data.xlsx in the repo is the database) ----------
+const [ghOwner,ghRepo,ghBranch,ghPath,ghToken,ghAuto,ghContacts,ghSave,ghPull,publishNowBtn] = ['ghOwner','ghRepo','ghBranch','ghPath','ghToken','ghAuto','ghContacts','ghSave','ghPull','publishNowBtn'].map(id=>document.getElementById(id));
+const APP_MODE = 'shared';          // 'admin' (admin.html) or 'shared' (index.html)
+const DATA_FILE = 'data.xlsx';
+const GH_KEY = 'asq_gh_cfg';
+let lastDataSig = '', adminDirty = false, editSeq = 0, publishTimer = null, publishChain = Promise.resolve();
+function setSyncNote(t){ ['dbSyncNote','liveStatus'].forEach(id=>{ const n=document.getElementById(id); if(n) n.textContent=t; }); }
+
+function rowsToHorses(rows){
+  return rows.map(r=>{
+    const hn = findVal(r,['Horsename','Horse Name','Horse']);
+    if(!hn) return null;
+    const paidRaw = String(findVal(r,['Paid','Payment Status','Payment','Status'])||'').toLowerCase().trim();
+    return {
+      cls: Number(findVal(r,['Class']))||0,
+      cn: String(findVal(r,['Class name','Class Name'])||''),
+      hn: String(hn),
+      co: String(findVal(r,['Horse country','Country'])||''),
+      sx: String(findVal(r,['Sex'])||''),
+      dob: toDateStr(findVal(r,['Birth date','DOB','Date of Birth'])),
+      col: String(findVal(r,['Color','Colour'])||''),
+      sire: String(findVal(r,['Sire'])||''),
+      dam: String(findVal(r,['Dam'])||''),
+      own: String(findVal(r,['Owner'])||'').trim(),
+      email: String(findVal(r,['Owner Email','Email','E-mail'])||'').trim(),
+      phone: String(findVal(r,['Owner Phone','Phone','Phone Number','Mobile'])||'').trim(),
+      paid: ['yes','y','paid','true','1'].includes(paidRaw)
+    };
+  }).filter(Boolean);
+}
+
+async function fetchRemote(){
+  const res = await fetch(DATA_FILE+'?t='+Date.now(), {cache:'no-store'});
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const wb = XLSX.read(await res.arrayBuffer(), {type:'array'});
+  const horses = rowsToHorses(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:''}));
+  if(!horses.length) throw new Error('no rows in data file');
+  let updatedAt = null;
+  if(wb.Sheets['Meta']){
+    const row = XLSX.utils.sheet_to_json(wb.Sheets['Meta'], {header:1}).find(r=>r[0]==='updatedAt');
+    if(row) updatedAt = row[1];
+  }
+  return {horses, updatedAt};
+}
+
+// Pull the latest data.xlsx and refresh whatever is on screen (only if it changed).
+async function syncFromRemote(force, manual){
+  if(manual) adminDirty = false;
+  try{
+    const {horses, updatedAt} = await fetchRemote();
+    const skip = APP_MODE==='admin' && adminDirty;           // never overwrite unpublished admin edits
+    const sig = JSON.stringify(horses);
+    if(!skip && (force || sig!==lastDataSig)){
+      lastDataSig = sig; HORSES = horses;
+      const a = document.querySelector('.view.active'); if(a) activateView(a.id);
+    }
+    if(!skip) setSyncNote('Data last updated '+(updatedAt?new Date(updatedAt).toLocaleString():'(time unknown)')+' · checked '+new Date().toLocaleTimeString());
+    return true;
+  } catch(e){
+    setSyncNote(location.protocol==='file:' ? 'Opened from a file — showing built-in data (live data works once hosted).' : 'Could not load data.xlsx ('+e.message+') — showing last known data.');
+    return false;
+  }
+}
+
+// ----- Admin: publish data.xlsx to GitHub -----
+function ghCfg(){ try{ return JSON.parse(localStorage.getItem(GH_KEY))||{}; }catch(e){ return {}; } }
+function readGhFields(){
+  return { owner:ghOwner.value.trim(), repo:ghRepo.value.trim(), branch:ghBranch.value.trim()||'main', path:ghPath.value.trim()||'data.xlsx',
+           token:ghToken.value.trim(), auto:ghAuto.checked, contacts:ghContacts.checked };
+}
+function loadGhFields(){
+  const c = ghCfg();
+  ghOwner.value=c.owner||''; ghRepo.value=c.repo||''; ghBranch.value=c.branch||'main'; ghPath.value=c.path||'data.xlsx';
+  ghToken.value=c.token||''; ghAuto.checked=c.auto!==false; ghContacts.checked=c.contacts!==false;
+}
+function saveGhFields(){ try{ localStorage.setItem(GH_KEY, JSON.stringify(readGhFields())); return true; }catch(e){ return false; } }
+
+function buildXlsxBase64(includeContacts){
+  const rows = HORSES.map(h=>{
+    const o = {'Class':h.cls,'Class name':h.cn,'Horsename':h.hn,'Horse country':h.co,'Sex':h.sx,'Birth date':h.dob,'Color':h.col,'Sire':h.sire,'Dam':h.dam,'Owner':h.own};
+    if(includeContacts){ o['Owner Email']=h.email||''; o['Owner Phone']=h.phone||''; }
+    o['Paid'] = h.paid ? 'Yes' : 'No';
+    return o;
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Catalogue');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['updatedAt', new Date().toISOString()]]), 'Meta');
+  return XLSX.write(wb, {bookType:'xlsx', type:'base64'});
+}
+
+async function doPublish(){
+  const c = ghCfg();
+  if(!c.owner || !c.repo || !c.token){ setSyncNote('Enter GitHub owner, repository and token, then click Save settings.'); return; }
+  const branch = c.branch||'main', path = c.path||'data.xlsx';
+  const api = `https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${path.split('/').map(encodeURIComponent).join('/')}`;
+  const H = {'Authorization':'Bearer '+c.token, 'Accept':'application/vnd.github+json', 'X-GitHub-Api-Version':'2022-11-28'};
+  const seq = editSeq;
+  setSyncNote('Publishing to GitHub…');
+  try{
+    for(let attempt=0; attempt<2; attempt++){
+      let sha;
+      const g = await fetch(api+'?ref='+encodeURIComponent(branch)+'&t='+Date.now(), {headers:H, cache:'no-store'});
+      if(g.ok) sha = (await g.json()).sha;
+      else if(g.status!==404) throw new Error('GitHub '+g.status+(g.status===401?' (token rejected)':g.status===403?' (no permission or rate limit)':''));
+      const body = {message:'Update catalogue data '+new Date().toISOString(), content:buildXlsxBase64(c.contacts!==false), branch};
+      if(sha) body.sha = sha;
+      const p = await fetch(api, {method:'PUT', headers:{...H,'Content-Type':'application/json'}, body:JSON.stringify(body)});
+      if(p.ok){
+        if(seq===editSeq) adminDirty = false; else schedulePublish();
+        setSyncNote('Published ✓ '+new Date().toLocaleTimeString()+' — the shared dashboard picks it up within a few minutes.');
+        return;
+      }
+      if(p.status!==409 && p.status!==422) throw new Error('GitHub '+p.status+(p.status===404?' (check owner / repo / branch / token access)':''));
+    }
+    throw new Error('file changed on GitHub while saving — click Publish again');
+  } catch(e){ setSyncNote('Publish failed: '+e.message); }
+}
+function publishNow(){ clearTimeout(publishTimer); publishChain = publishChain.then(doPublish); return publishChain; }
+function schedulePublish(){ clearTimeout(publishTimer); publishTimer = setTimeout(publishNow, 3000); }
+
+// Called after every edit / paid tick / Excel apply.
+function pushToDb(){
+  adminDirty = true; editSeq++;
+  const c = ghCfg();
+  if(APP_MODE!=='admin' || !c.token || c.auto===false){
+    setSyncNote(c.token ? 'Changed — click "Publish to GitHub now" to sync the shared dashboard.' : 'Changed on this device only — add GitHub settings to sync the shared dashboard.');
+    return;
+  }
+  setSyncNote('Change detected — publishing in 3 seconds…');
+  schedulePublish();
+}
+window.addEventListener('beforeunload', e=>{ if(APP_MODE==='admin' && adminDirty && ghCfg().token){ e.preventDefault(); e.returnValue=''; } });
+
+ghSave.addEventListener('click', ()=>{ setSyncNote(saveGhFields() ? 'GitHub settings saved on this device.' : 'Could not save settings in this browser.'); });
+publishNowBtn.addEventListener('click', ()=>{ saveGhFields(); publishNow(); });
+ghPull.addEventListener('click', ()=>{ syncFromRemote(true, true); });
+
+// ---------- Database tab ----------
+function renderDatabase(filter=''){
+  const f=filter.toLowerCase();
+  const rows = HORSES.map((h,i)=>[i,h]).filter(([i,h])=>!f || [h.hn,h.own,h.sire,h.dam,h.cn,h.co].join(' ').toLowerCase().includes(f));
+  document.querySelector('#dbTable tbody').innerHTML = rows.map(([i,h])=>
+    `<tr>
+      <td>${i+1}</td>
+      <td contenteditable="true" data-idx="${i}" data-field="hn">${h.hn}</td>
+      <td contenteditable="true" data-idx="${i}" data-field="cn">${h.cn}</td>
+      <td contenteditable="true" data-idx="${i}" data-field="co">${h.co}</td>
+      <td contenteditable="true" data-idx="${i}" data-field="sx">${h.sx}</td>
+      <td contenteditable="true" data-idx="${i}" data-field="dob">${h.dob}</td>
+      <td contenteditable="true" data-idx="${i}" data-field="sire">${h.sire}</td>
+      <td contenteditable="true" data-idx="${i}" data-field="dam">${h.dam}</td>
+      <td contenteditable="true" data-idx="${i}" data-field="own">${h.own}</td>
+      <td contenteditable="true" data-idx="${i}" data-field="email">${h.email||''}</td>
+      <td contenteditable="true" data-idx="${i}" data-field="phone">${h.phone||''}</td>
+      <td style="text-align:center"><input type="checkbox" class="paid-toggle" data-idx="${i}" ${h.paid?'checked':''}></td>
+    </tr>`
+  ).join('');
+  document.getElementById('dbCount').textContent = HORSES.length;
+}
+document.getElementById('dbSearch').addEventListener('input',e=>renderDatabase(e.target.value));
+document.querySelector('#dbTable tbody').addEventListener('focusout',e=>{
+  const td=e.target;
+  if(td.dataset && td.dataset.field!==undefined){
+    HORSES[+td.dataset.idx][td.dataset.field] = td.textContent.trim();
+    pushToDb();
+  }
+});
+document.querySelector('#dbTable tbody').addEventListener('change',e=>{
+  if(e.target.classList.contains('paid-toggle')){
+    HORSES[+e.target.dataset.idx].paid = e.target.checked;
+    pushToDb();
+  }
+});
+
+document.getElementById('catSearch').addEventListener('input',e=>renderCatalogue(e.target.value));
+
+// ---------- Tabs ----------
+function activateView(name){
+  document.querySelectorAll('.tab-btn').forEach(x=>x.classList.toggle('active',x.dataset.view===name));
+  document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===name));
+  if(name==='dash') renderDashboard();
+  else if(name==='inv'){ populateOwnerSelect(); buildInvoice(); }
+  else if(name==='db') renderDatabase(document.getElementById('dbSearch').value);
+}
+document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>{
+  activateView(b.dataset.view);
+  history.replaceState(null,'','#'+b.dataset.view);
+}));
+
+// ---------- Excel upload ----------
+function findVal(row,names){
+  const keys = Object.keys(row);
+  for(const n of names){
+    const k = keys.find(k=>k.toLowerCase().trim()===n.toLowerCase());
+    if(k!==undefined && row[k]!==undefined && row[k]!=='') return row[k];
+  }
+  return undefined;
+}
+function toDateStr(v){
+  if(v instanceof Date) return v.toISOString().slice(0,10);
+  if(typeof v==='number'){ const d=XLSX.SSF.parse_date_code(v); if(d) return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`; }
+  return String(v||'').slice(0,10);
+}
+let pendingHorses = null;
+document.getElementById('excelUpload').addEventListener('change',(e)=>{
+  const file = e.target.files[0];
+  const status = document.getElementById('uploadStatus');
+  const applyBtn = document.getElementById('applyUploadBtn');
+  pendingHorses = null; applyBtn.disabled = true;
+  if(!file){ status.textContent=''; return; }
+  status.textContent = 'Reading file...';
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    try{
+      const wb = XLSX.read(ev.target.result,{type:'array',cellDates:true});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet,{defval:''});
+      if(!rows.length) throw new Error('No rows found in the first sheet.');
+      const parsed = rows.map(r=>{
+        const hn = findVal(r,['Horsename','Horse Name','Horse']);
+        if(!hn) return null;
+        const paidRaw = String(findVal(r,['Paid','Payment Status','Payment','Status'])||'').toLowerCase().trim();
+        return {
+          cls: Number(findVal(r,['Class']))||0,
+          cn: findVal(r,['Class name','Class Name'])||'',
+          hn: String(hn).toUpperCase(),
+          co: findVal(r,['Horse country','Country'])||'',
+          sx: findVal(r,['Sex'])||'',
+          dob: toDateStr(findVal(r,['Birth date','DOB','Date of Birth'])),
+          col: findVal(r,['Color','Colour'])||'',
+          sire: String(findVal(r,['Sire'])||'').toUpperCase(),
+          dam: String(findVal(r,['Dam'])||'').toUpperCase(),
+          own: String(findVal(r,['Owner'])||'').trim(),
+          email: String(findVal(r,['Owner Email','Email','E-mail'])||'').trim(),
+          phone: String(findVal(r,['Owner Phone','Phone','Phone Number','Mobile'])||'').trim(),
+          paid: ['yes','y','paid','true','1'].includes(paidRaw)
+        };
+      }).filter(Boolean);
+      if(!parsed.length) throw new Error('Could not find a "Horsename" column in the file.');
+      pendingHorses = parsed;
+      const paidN = parsed.filter(h=>h.paid).length;
+      status.textContent = `File read: ${parsed.length} horses found (${paidN} marked paid). Click "Update Dashboard & List" to apply.`;
+      applyBtn.disabled = false;
+    } catch(err){
+      status.textContent = 'Could not read file: '+err.message;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+document.getElementById('applyUploadBtn').addEventListener('click',()=>{
+  if(!pendingHorses) return;
+  HORSES = pendingHorses;
+  const paidN = HORSES.filter(h=>h.paid).length;
+  const active = document.querySelector('.view.active').id;
+  activateView(active);
+  pushToDb();
+  document.getElementById('uploadStatus').textContent = `Updated: ${HORSES.length} horses loaded (${paidN} marked paid).`;
+  document.getElementById('applyUploadBtn').disabled = true;
+  document.getElementById('excelUpload').value = '';
+  pendingHorses = null;
+});
+document.getElementById('templateBtn').addEventListener('click',()=>{
+  const sample = [
+    {'Horsename':'AL SHAQAB SAMIRA','Class name':'Yearling Fillies','Horse country':'QA','Sex':'F','Birth date':'2025-02-10','Color':'Grey','Sire':'AJMAN MONISCA','Dam':'MARWA AL SHAQAB','Owner':'Al Shaqab Stud','Owner Email':'info@alshaqabstud.qa','Owner Phone':'+974 5550 4595','Paid':'Yes'},
+    {'Horsename':'DAHESS AL ARAB','Class name':'Colts 2 Years Old','Horse country':'SA','Sex':'M','Birth date':'2024-01-05','Color':'Bay','Sire':'MARWAN AL SHAQAB','Dam':'LAYLA AL SHAQAB','Owner':'Al Jassim Stables','Owner Email':'contact@aljassim.sa','Owner Phone':'+966 50 123 4567','Paid':'No'}
+  ];
+  const ws = XLSX.utils.json_to_sheet(sample);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Catalogue');
+  XLSX.writeFile(wb,'Horse_Catalogue_Upload_Template.xlsx');
+});
+
+// ---------- Share dashboard ----------
+function viewOnlyLink(){ return location.href.split('#')[0].split('?')[0].replace(/[^/]*$/,'')+'index.html'; }
+async function copyText(t){
+  try{ await navigator.clipboard.writeText(t); return true; }
+  catch(e){ const i=document.getElementById('shareLink'); i.focus(); i.select(); try{ return document.execCommand('copy'); }catch(_){ return false; } }
+}
+document.getElementById('shareDashBtn').addEventListener('click', async ()=>{
+  const box=document.getElementById('shareBox'), inp=document.getElementById('shareLink'), note=document.getElementById('shareNote');
+  inp.value = viewOnlyLink();
+  box.style.display='block';
+  const ok = await copyText(inp.value);
+  note.textContent = (ok?'Link copied. ':'') + 'Anyone opening this link sees the Dashboard only (no Invoice or Database tabs).' +
+    (location.protocol==='file:' ? ' You are viewing the file from your computer — this link will work once the file is uploaded to a web host; replace the address above with the hosted address, keeping "?view=dashboard" at the end.' : '');
+});
+document.getElementById('copyLinkBtn').addEventListener('click', async ()=>{
+  const ok = await copyText(document.getElementById('shareLink').value);
+  document.getElementById('shareNote').textContent = ok ? 'Link copied to clipboard.' : 'Could not copy automatically — select the link and copy it manually.';
+});
+
+// ---------- Save updated file ----------
+// ---------- Invoice ----------
+const ownerSelect=document.getElementById('ownerSelect');
+document.getElementById('invDate').value = new Date().toISOString().slice(0,10);
+
+let lastContactOwner = null;
+function buildInvoice(){
+  const owner = ownerSelect.value;
+  if(owner !== lastContactOwner){
+    lastContactOwner = owner;
+    const match = HORSES.find(h=>h.own===owner && (h.email||h.phone));
+    if(match){
+      if(match.email) document.getElementById('custEmail').value = match.email;
+      if(match.phone) document.getElementById('custPhone').value = match.phone;
+    }
+  }
+  const fee = parseFloat(document.getElementById('feeInput').value)||0;
+  const horses = HORSES.filter(h=>h.own===owner);
+  document.getElementById('s_owner').textContent = owner||'';
+  document.getElementById('s_addr').textContent = document.getElementById('custAddr').value;
+  document.getElementById('s_phone').textContent = document.getElementById('custPhone').value || '-';
+  document.getElementById('s_email').textContent = document.getElementById('custEmail').value || '-';
+  document.getElementById('s_date').textContent = document.getElementById('invDate').value;
+  document.getElementById('s_invno').textContent = document.getElementById('invNo').value;
+  document.getElementById('invBody').innerHTML = horses.map((h,i)=>
+    `<tr><td>${i+1}</td><td>${h.hn}</td><td>${h.dob}</td><td>${h.sire}</td><td>${h.dam}</td><td>${h.cn}</td>`+
+    `<td style="text-align:right"><input class="amt-input no-print-input" data-i="${i}" type="number" value="${fee}" style="width:80px" onchange="recalc()"> `+
+    `<span class="print-only" style="display:none">${fee.toFixed(2)}</span></td></tr>`
+  ).join('');
+  recalc();
+}
+function recalc(){
+  let total=0;
+  document.querySelectorAll('.amt-input').forEach(inp=>total+=parseFloat(inp.value)||0);
+  document.getElementById('invTotal').textContent = total.toLocaleString(undefined,{minimumFractionDigits:2})+' QAR';
+}
+ownerSelect.addEventListener('change',buildInvoice);
+['feeInput','custAddr','custPhone','custEmail','invDate','invNo'].forEach(id=>
+  document.getElementById(id).addEventListener('input',buildInvoice));
+document.getElementById('printBtn').addEventListener('click',()=>{
+  document.querySelectorAll('.amt-input').forEach(inp=>{
+    const span=inp.nextElementSibling;
+    span.textContent = parseFloat(inp.value||0).toFixed(2);
+  });
+  document.querySelectorAll('.amt-input').forEach(i=>i.style.display='none');
+  document.querySelectorAll('.print-only').forEach(s=>s.style.display='inline');
+  window.print();
+  setTimeout(()=>{
+    document.querySelectorAll('.amt-input').forEach(i=>i.style.display='inline-block');
+    document.querySelectorAll('.print-only').forEach(s=>s.style.display='none');
+  },500);
+});
+document.getElementById('waBtn').addEventListener('click',()=>{
+  const owner = ownerSelect.value;
+  const fee = parseFloat(document.getElementById('feeInput').value)||0;
+  const horses = HORSES.filter(h=>h.own===owner);
+  const invNo = document.getElementById('invNo').value;
+  const date = document.getElementById('invDate').value;
+  let total=0;
+  document.querySelectorAll('.amt-input').forEach(inp=>total+=parseFloat(inp.value)||0);
+  let msg = `*INVOICE - Al Shaqab International Arabian Horse Show 2026*\n\n`;
+  msg += `Customer: ${owner}\nInvoice No: ${invNo}\nDate: ${date}\n\n`;
+  msg += `*Entries:*\n`;
+  horses.forEach((h,i)=>{
+    const amt = parseFloat(document.querySelectorAll('.amt-input')[i]?.value)||fee;
+    msg += `${i+1}. ${h.hn} (${h.cn}) - QAR ${amt.toFixed(2)}\n`;
+  });
+  msg += `\n*Total Amount: QAR ${total.toLocaleString(undefined,{minimumFractionDigits:2})}*\n\n`;
+  msg += `Please settle at your earliest convenience.\nPay to: Al Shaqab - Qatar Foundation, QNB, IBAN QA16 QNBA 0000 0000 0013 0241 71055`;
+  const phoneRaw = document.getElementById('custPhone').value.replace(/[^0-9]/g,'');
+  const url = phoneRaw ? `https://wa.me/${phoneRaw}?text=${encodeURIComponent(msg)}` : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  window.open(url,'_blank');
+});
+
+async function makeInvoicePdf(){
+  document.querySelectorAll('.amt-input').forEach(inp=>{ inp.dataset.prev=inp.style.display; inp.style.display='none'; });
+  document.querySelectorAll('.print-only').forEach(s=>{ s.dataset.prev=s.style.display; s.style.display='inline'; });
+  const el = document.getElementById('invoiceSheet');
+  const canvas = await html2canvas(el,{scale:2,backgroundColor:'#ffffff'});
+  document.querySelectorAll('.amt-input').forEach(inp=>{ inp.style.display=inp.dataset.prev||'inline-block'; });
+  document.querySelectorAll('.print-only').forEach(s=>{ s.style.display=s.dataset.prev||'none'; });
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({unit:'pt', format:'a4'});
+  const pw = pdf.internal.pageSize.getWidth();
+  const ph = (canvas.height*pw)/canvas.width;
+  pdf.addImage(canvas.toDataURL('image/png'),'PNG',0,0,pw,ph);
+  return pdf;
+}
+document.getElementById('waPdfBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('waPdfBtn');
+  const hint = document.getElementById('waHint');
+  const origText = btn.textContent;
+  btn.textContent = 'Preparing PDF...'; btn.disabled = true;
+  try{
+    const owner = ownerSelect.value;
+    const invNo = document.getElementById('invNo').value;
+    const fname = `Invoice_${owner.replace(/[^a-z0-9]+/gi,'_')}_${invNo}.pdf`;
+    const pdf = await makeInvoicePdf();
+    const blob = pdf.output('blob');
+    const file = new File([blob], fname, {type:'application/pdf'});
+    const phoneRaw = document.getElementById('custPhone').value.replace(/[^0-9]/g,'');
+
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      hint.textContent = 'Choose WhatsApp from the share menu to attach it' + (phoneRaw ? ' and pick the contact for '+phoneRaw+'.' : '.');
+      await navigator.share({files:[file], title:fname, text:`Invoice ${invNo} for ${owner}`});
+    } else {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = fname;
+      document.body.appendChild(a); a.click(); a.remove();
+      const waMsg = `Invoice ${invNo} for ${owner} attached (PDF downloaded as "${fname}" - please attach it here).`;
+      const waUrl = phoneRaw ? `https://wa.me/${phoneRaw}?text=${encodeURIComponent(waMsg)}` : `https://wa.me/?text=${encodeURIComponent(waMsg)}`;
+      hint.textContent = `PDF downloaded. WhatsApp chat is opening — attach "${fname}" from your downloads.`;
+      window.open(waUrl,'_blank');
+    }
+  } catch(err){
+    if(err.name !== 'AbortError'){ document.getElementById('waHint').textContent = 'Could not prepare the PDF: '+err.message; }
+  } finally {
+    btn.textContent = origText; btn.disabled = false;
+  }
+});
+
+function exportPaid(){
+  const paid = HORSES.filter(h=>h.paid);
+  if(!paid.length){ alert('No horses are marked as paid yet. Tick them in the Database tab first.'); return; }
+  const extra = [...new Set(HORSES.map(h=>h.cn))].filter(c=>!classOrder.includes(c));
+  const order = classOrder.concat(extra);
+  paid.sort((a,b)=>order.indexOf(a.cn)-order.indexOf(b.cn));
+  const data = paid.map((h,i)=>({ 'No':i+1,'Horse Name':h.hn,'Class':h.cn,'Country':h.co,'Owner':h.own,'DOB':h.dob,'Sire':h.sire,'Dam':h.dam }));
+  const summary = order.map(cn=>({ 'Class':cn,'Paid Entries':paid.filter(h=>h.cn===cn).length })).filter(r=>r['Paid Entries']>0);
+  summary.push({ 'Class':'TOTAL','Paid Entries':paid.length });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data),'Paid Horses');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(summary),'Paid by Class');
+  XLSX.writeFile(wb,'Paid_Horses_AlShaqab2026.xlsx');
+}
+document.getElementById('exportPaidBtn').addEventListener('click',exportPaid);
+document.getElementById('dbExportPaidBtn').addEventListener('click',exportPaid);
+
+const initialView = document.body.classList.contains('viewonly') ? 'dash' : ['dash','inv','db'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'dash';
+activateView(initialView);
+loadGhFields();
+if(APP_MODE==='shared'){
+  syncFromRemote(true);
+  setInterval(()=>syncFromRemote(false), 60000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) syncFromRemote(false); });
+} else { syncFromRemote(true); }
+
+</script>
+</body>
+</html>
