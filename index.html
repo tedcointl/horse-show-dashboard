@@ -400,7 +400,9 @@ async function syncFromRemote(force, manual){
     if(!skip) setSyncNote('Data last updated '+(updatedAt?new Date(updatedAt).toLocaleString():'(time unknown)')+' · checked '+new Date().toLocaleTimeString());
     return true;
   } catch(e){
-    setSyncNote(location.protocol==='file:' ? 'Opened from a file — showing built-in data (live data works once hosted).' : 'Could not load data.xlsx ('+e.message+') — showing last known data.');
+    setSyncNote(location.protocol==='file:' ? 'Opened from a file — showing built-in data (live data works once hosted).'
+      : /404/.test(e.message) ? (APP_MODE==='admin' ? 'data.xlsx is not on your website yet — showing built-in data. Click "Publish to GitHub now" (Data Tools) to create it.' : 'The data file is not published yet — showing built-in data. Ask the admin to publish.')
+      : 'Could not load data.xlsx ('+e.message+') — showing last known data.');
     return false;
   }
 }
@@ -514,7 +516,7 @@ async function diagnose(){
     if(!r.ok){ say(false,'Branch "'+(c.branch||'main')+'" not found — the default is usually main (some repos use master).'); return; }
     say(true,'Branch "'+(c.branch||'main')+'" found');
     r = await fetch(`${api}/repos/${c.owner}/${c.repo}/contents/${(c.path||'data.xlsx').split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(c.branch||'main')}`, {headers:H});
-    say(r.ok ? true : null, r.ok ? (c.path||'data.xlsx')+' is in the repository' : (c.path||'data.xlsx')+' is not in the repository yet — it will be created on the first publish (or upload the supplied data.xlsx).');
+    say(r.ok ? true : null, r.ok ? (c.path||'data.xlsx')+' is in the repository' : (c.path||'data.xlsx')+' is not in the repository yet — click "Publish to GitHub now" (Data Tools, below) to create it, or upload the supplied data.xlsx.');
     const base = c.repo.toLowerCase()===(c.owner+'.github.io').toLowerCase() ? `https://${c.owner}.github.io/` : `https://${c.owner}.github.io/${c.repo}/`;
     try{ const w = await fetch(base+(c.path||'data.xlsx')+'?t='+Date.now(), {cache:'no-store'});
          say(w.ok, w.ok ? 'Website is live: '+base : 'Website returned '+w.status+' — turn on Settings → Pages (deploy from branch '+(c.branch||'main')+', folder /root) and wait a minute.'); }
