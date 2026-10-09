@@ -69,7 +69,7 @@ table{width:100%; border-collapse:collapse; font-family:Arial,sans-serif; font-s
 th,td{padding:9px 8px; border-bottom:1px solid var(--line); text-align:left}
 th{color:var(--sub); font-weight:600; font-size:.72rem; text-transform:uppercase; letter-spacing:.4px; position:sticky; top:0; background:var(--card)}
 .scroll{max-height:360px; overflow:auto; -webkit-overflow-scrolling:touch; border-radius:8px}
-input[type=text],input[type=search],input[type=number],input[type=date],input[type=email],input[type=password],select{
+input[type=text],input[type=search],input[type=number],input[type=date],select{
   font-family:Arial,sans-serif; padding:11px 12px; border:1px solid var(--line); border-radius:8px;
   background:var(--bg); color:var(--ink); font-size:16px; width:100%; min-height:44px; touch-action:manipulation;
 }
@@ -147,8 +147,6 @@ details.grp table{min-width:420px}
   #invoiceSheet table{min-width:0}
 }
 </style>
-<script src="config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="viewonly">
 <header>
@@ -232,28 +230,34 @@ details.grp table{min-width:420px}
     </details>
   </div>
   <div class="card no-print" id="ghCard" style="margin-bottom:16px">
-    <h3 style="margin-top:0">Cloud Database (shared dashboard)</h3>
-    <div class="row3" style="align-items:end">
-      <div class="field"><label>Admin email</label><input type="email" id="dbEmail" autocomplete="username"></div>
-      <div class="field"><label>Password</label><input type="password" id="dbPass" autocomplete="current-password"></div>
-      <div class="field"><button class="btn" id="dbSignIn" type="button">🔐 Sign in</button><button class="btn secondary" id="dbSignOut" type="button" style="display:none">Sign out</button></div>
+    <h3 style="margin-top:0">GitHub Sync (shared dashboard)</h3>
+    <div class="row3">
+      <div class="field"><label>GitHub user / organisation</label><input type="text" id="ghOwner" placeholder="e.g. alshaqab-events" autocomplete="off"></div>
+      <div class="field"><label>Repository</label><input type="text" id="ghRepo" placeholder="e.g. horse-show-dashboard" autocomplete="off"></div>
+      <div class="field"><label>Branch</label><input type="text" id="ghBranch" value="main" autocomplete="off"></div>
     </div>
-    <p id="authNote" style="font-family:Arial;font-size:.8rem;color:var(--sub);margin:0 0 10px"></p>
-    <div class="row3" style="max-width:640px">
-      <button class="btn secondary" id="ghPull" type="button">⬇️ Pull latest from database</button>
-      <button class="btn secondary" id="exportAllBtn" type="button">📄 Download backup (Excel)</button>
+    <div class="row3">
+      <div class="field"><label>Data file in repo</label><input type="text" id="ghPath" value="data.xlsx" autocomplete="off"></div>
+      <div class="field" style="grid-column:span 2"><label>Access token (fine-grained, Contents: read &amp; write)</label><input type="password" id="ghToken" autocomplete="off"></div>
     </div>
-    <p style="font-family:Arial;font-size:.72rem;color:var(--sub);margin:8px 0 0">Once signed in, every edit, paid tick or Excel update is saved automatically and appears live on the shared dashboard. Owner email &amp; phone are kept in a private table that only the admin can read.</p>
+    <label style="display:block;font-family:Arial;font-size:.82rem;margin:4px 0"><input type="checkbox" id="ghAuto" checked> Publish automatically 3 seconds after each change</label>
+    <label style="display:block;font-family:Arial;font-size:.82rem;margin:4px 0 10px"><input type="checkbox" id="ghContacts" checked> Include owner email &amp; phone in the published Excel (anyone with the site address can download it)</label>
+    <div class="row3" style="max-width:760px">
+      <button class="btn secondary" id="ghSave" type="button">💾 Save settings</button>
+      <button class="btn secondary" id="ghTest" type="button">🔍 Test connection</button>
+      <button class="btn secondary" id="ghPull" type="button">⬇️ Pull latest from GitHub</button>
+    </div>
+    <pre id="ghDiag" style="font-family:Arial;font-size:.8rem;white-space:pre-wrap;margin:10px 0 0;color:var(--ink)"></pre>
+    <p style="font-family:Arial;font-size:.72rem;color:var(--sub);margin:8px 0 0">Settings and token are stored only in this browser. Use your own computer, and a token limited to this one repository.</p>
   </div>
-  
-<div class="card no-print" style="margin-bottom:16px">
+  <div class="card no-print" style="margin-bottom:16px">
     <h3 style="margin-top:0">Data Tools</h3>
     <div class="row3">
       <div class="field"><label>Search</label><input type="search" id="dbSearch" placeholder="Search horse, owner, sire, class..."></div>
       <div class="field"><label>&nbsp;</label><button class="btn secondary" id="dbExportPaidBtn" type="button">⬇️ Download Paid Entries (Excel)</button></div>
-      <div class="field"><label>&nbsp;</label><button class="btn" id="publishNowBtn" type="button">⬆️ Save to database now</button></div>
+      <div class="field"><label>&nbsp;</label><button class="btn" id="publishNowBtn" type="button">⬆️ Publish to GitHub now</button></div>
     </div>
-    <p style="font-family:Arial;font-size:.72rem;color:var(--sub);margin:4px 0 0">Edit any cell directly — tap it to type — and tick the box to mark an entry paid. After you sign in (Cloud Database card above) changes save automatically and show live on the shared dashboard.</p>
+    <p style="font-family:Arial;font-size:.72rem;color:var(--sub);margin:4px 0 0">Edit any cell directly — tap it to type — and tick the box to mark an entry paid. Changes reach the shared dashboard when published to GitHub (automatic if enabled above, or click <b>Publish to GitHub now</b>).</p>
   </div>
   <div class="card">
     <h3>Horse Database (<span id="dbCount"></span> horses)</h3>
@@ -337,144 +341,197 @@ if(new URLSearchParams(location.search).get('view')==='dashboard' || location.ha
 const SHARE_URL = '';
 let HORSES = /*DATA_START*/[{"cls":3,"cn":"Yearling Fillies","hn":"Roudah Al Jazeel","co":"QA","sx":"F","dob":"2025-01-14","col":"Bay","sire":"Rhan Al Shahania","dam":"Carlotta Cj","own":"Al Jazeel Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Nayyla Al Jazeel","co":"QA","sx":"F","dob":"2025-03-03","col":"Bay","sire":"Exagon Os","dam":"D Nashabeyyah","own":"Al Jazeel Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Nina Al Nasser","co":"QA","sx":"F","dob":"2025-02-09","col":"Grey","sire":"Tm Itaipu","dam":"Hattan Al Nasser","own":"Al Nasser Stud - Sheikh Nawaf Bin Nasser Al Thani","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Ghadnana Al Sraiya","co":"QA","sx":"F","dob":"2025-01-12","col":"Grey","sire":"Wadee Al Shaqab","dam":"Alkaydah Al Sraiya","own":"Al Sraiya Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Bessan Al Sraiya","co":"QA","sx":"F","dob":"2025-03-20","col":"Grey","sire":"Excalibur Ea","dam":"Shalfa Al Sraiya","own":"Al Sraiya Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Hala Al Wajba","co":"QA","sx":"F","dob":"2025-02-05","col":"Bay","sire":"Lr Anselmo","dam":"Ss Helen","own":"Al Atheel Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Ghalya Al Thamer","co":"QA","sx":"F","dob":"2025-03-15","col":"Bay","sire":"D Hayel","dam":"Anhar Al Shaqab","own":"Al Atheel Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Jaflah Al Ammar","co":"QA","sx":"F","dob":"2025-03-25","col":"Black","sire":"Copperfield Ora","dam":"Summar Al Ammar","own":"Al Ammar Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Rayana Al Ammar","co":"QA","sx":"F","dob":"2025-04-21","col":"Bay","sire":"Wf Gawin","dam":"Asrar Al Ammar","own":"Al Ammar Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Shomookh Umm Aludham","co":"QA","sx":"F","dob":"2025-03-16","col":"Grey","sire":"Harbi Al Adwan","dam":"Najla Umm Aludham","own":"Mr. Nasser Mohammed M A Al Hajri","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Somood Umm Aludham","co":"QA","sx":"F","dob":"2025-01-17","col":"Grey","sire":"Tm Itaipu","dam":"Najla Umm Aludham","own":"Mr. Mesfer Mohammed Mesfer Al Hajri","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Harba Umm Aludham","co":"QA","sx":"F","dob":"2025-04-13","col":"Grey","sire":"Harbi Al Adwan","dam":"Da Magic Moment","own":"Mr. Nasser Mohammed M A Al Hajri","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Fulla Umm Aludham","co":"QA","sx":"F","dob":"2025-03-04","col":"Grey","sire":"Figaro","dam":"Majdd","own":"Al Ghashamiya Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Aq Oula","co":"QA","sx":"F","dob":"2025-04-25","col":"Bay","sire":"Exagon Os","dam":"Waad Al Yacoub","own":"Al Yacoub Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Rafeea Al Shaqab","co":"QA","sx":"F","dob":"2025-03-09","col":"Grey","sire":"Alexxanderr","dam":"Kahlah Al Shaqab","own":"Al Sada Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Lujain Al Hamama","co":"SA","sx":"F","dob":"2025-04-01","col":"Grey","sire":"Saqaar Alaz","dam":"Shaimaa Alfariss Aa","own":"Sheikh Jassim Saoud A J Al-Thani","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Hiba Mudhar","co":"QA","sx":"F","dob":"2025-03-27","col":"Grey","sire":"Hama Mudhar Mp","dam":"Layali Al Nasser","own":"Sheikh Hamad Ali A Th Al Thani","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Asrar Mudhar","co":"QA","sx":"F","dob":"2025-02-07","col":"Grey","sire":"Rfi Farid","dam":"Ayoush Al Shaqab","own":"Sheikh Hamad Ali A Th Al Thani","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Cady Mudhar","co":"QA","sx":"F","dob":"2025-02-03","col":"Bay","sire":"Exagon Os","dam":"Emira K","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Mashael Mudhar","co":"QA","sx":"F","dob":"2025-01-22","col":"Bay","sire":"D Shakhat","dam":"Shaikha Mudhar","own":"Sheikh Hamad Ali A Th Al Thani","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Mayyas Mudhar","co":"QA","sx":"F","dob":"2025-04-04","col":"Chestnut","sire":"D Shakhat","dam":"Mt Bambina","own":"Mr. Mansoor Ghanim A A  Al-Khayareen","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Sh Rabwah","co":"ZA","sx":"F","dob":"2025-04-10","col":"Grey","sire":"Aj Taj","dam":"Pse Razeelah","own":"Muath Mohammed Abdulkarim Aba Numay","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Es Hoor","co":"SA","sx":"F","dob":"2025-01-23","col":"Bay","sire":"Mutabahi Al Hawajer","dam":"Shmokh Al Haitham","own":"Hamad Mahdi M Alyami","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Shamekha Al Wajba","co":"QA","sx":"F","dob":"2025-01-25","col":"Grey","sire":"Tm Itaipu","dam":"J Shamasi","own":"Al Wajba Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Tswahen Almishraaf","co":"QA","sx":"F","dob":"2025-01-02","col":"Chestnut","sire":"Gazwan Al Sraiya","dam":"Bella Sedona","own":"Al Mishraaf Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Waad Alasl","co":"SA","sx":"F","dob":"2025-08-25","col":"Chestnut","sire":"Melih Al Zobair","dam":"Trussrsha","own":"Mohammed Abdulhaq Abdulwahab Alkhars - Alasl Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Kh Aya","co":"SA","sx":"F","dob":"2025-02-10","col":"Bay","sire":"Raoud Albidayer","dam":"Bw Amjad","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Salwat Al Shaqab","co":"QA","sx":"F","dob":"2025-04-20","col":"Grey","sire":"Harbi Al Adwan","dam":"Marieta Al Shaqab","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Mo Seba","co":"AE","sx":"F","dob":"2025-11-14","col":"Grey","sire":"Edwan Al Zobair","dam":"M.O Muntassira","own":"Ali Mohammed Qamber Hajeeh","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Hk-Bashayir","co":"QA","sx":"F","dob":"2025-01-05","col":"Bay","sire":"Figaro","dam":"Maha Al Sraiya","own":"Mr. Hamad Jumah A S Al-Kaabi","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"A.K.A. Teha","co":"QA","sx":"F","dob":"2025-02-18","col":"Bay","sire":"Dominic M","dam":"Saten","own":"Mr. Khalid Ali A Al-Obaidli","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Jumna Ns","co":"BH","sx":"F","dob":"2025-03-01","col":"Chestnut","sire":"Royal Asad","dam":"Am Nura","own":"Husain Habib Hasan - Al Nassim Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Mathayel Al Athba","co":"QA","sx":"F","dob":"2025-02-10","col":"Bay","sire":"Ghaith Al Zobair","dam":"Lyali Al Athba","own":"Al Athba Stud","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Eishq Erab Alsahra","co":"SA","sx":"F","dob":"2025-04-06","col":"Bay","sire":"Eks Farajj","dam":"Maashogat Erab Al Sahhra","own":"Saad Saleh Ibraheem  Bobshait","email":"","phone":""},{"cls":3,"cn":"Yearling Fillies","hn":"Tamara Alshathliah","co":"SA","sx":"F","dob":"2025-04-01","col":"Bay","sire":"Mutabahi Al Hawajer","dam":"Cw Eleganza","own":"Abdulaziz Abdulrahman Alothman","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Sirajj Al Jazeel","co":"QA","sx":"M","dob":"2025-01-11","col":"Chestnut","sire":"D Shakhat","dam":"Royal Titania As","own":"Al Jazeel Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Rayq Al Shaqab","co":"QA","sx":"M","dob":"2025-03-20","col":"Grey","sire":"Wf Gawin","dam":"Princess Marwan Rc","own":"Mr. Nasser Salman N E Al-Mesallam","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Lahab Al Nasser","co":"QA","sx":"M","dob":"2025-02-02","col":"Grey","sire":"D Seraj","dam":"Leena Al Nasser","own":"Sheikh Khalid Nasser A A Al-Thani","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Haddaj Al Sraiya","co":"QA","sx":"M","dob":"2025-03-15","col":"Grey","sire":"Harbi Al Adwan","dam":"Alkaydah Al Sraiya","own":"Al Sraiya Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Harib Al Wajba","co":"QA","sx":"M","dob":"2025-04-01","col":"Grey","sire":"Harbi Al Adwan","dam":"Mb Doha","own":"Al Atheel Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Nashwan Al Ammar","co":"QA","sx":"M","dob":"2025-03-27","col":"Grey","sire":"Halul Al Khor","dam":"Al Mubarkia Al Ammar","own":"Al Ammar Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Shaheen Al Mohannad","co":"QA","sx":"M","dob":"2025-11-11","col":"Grey","sire":"Rajeh Al Adwan","dam":"Zumurruda Al Nasser","own":"Abdullah Saad Hilal Al Mohannadi","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Winchester Al Jood","co":"QA","sx":"M","dob":"2025-02-02","col":"Chestnut","sire":"D Wannas","dam":"Shurouq Al Nasser","own":"Al Sada  Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Farr'A E'Thanya","co":"QA","sx":"M","dob":"2025-05-04","col":"Bay","sire":"Aj Radman","dam":"Farfalla Hhc","own":"Al Hamama Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Ghaith Al Nasser","co":"QA","sx":"M","dob":"2025-03-21","col":"Grey","sire":"Tm Itaipu","dam":"Jolien Aljassimya","own":"Sheikh Jassim Saoud A J Al-Thani","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"H Ghaith","co":"QA","sx":"M","dob":"2025-05-01","col":"Bay","sire":"Ghaith Al Zobair","dam":"Faidh Al Jfoul","own":"Al Henzab Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"H-Ornes","co":"QA","sx":"M","dob":"2025-01-14","col":"Bay","sire":"Mutabahi Al Hawajer","dam":"Mystica Soraya","own":"Al Henzab Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Tael Al Jood","co":"QA","sx":"M","dob":"2025-01-02","col":"Grey","sire":"Talaal Serondella","dam":"Elkymia Al Jood","own":"Al Dawasir Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Arkan Al Dawasir","co":"BH","sx":"M","dob":"2025-02-20","col":"Chestnut","sire":"Sq Wasim","dam":"Aj Nomah","own":"Al Dawasir Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Lusail Mudhar","co":"QA","sx":"M","dob":"2025-02-03","col":"Bay","sire":"Exagon Os","dam":"Mb Querida","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Bandar Mudhar","co":"QA","sx":"M","dob":"2025-02-12","col":"Grey","sire":"Exagon Os","dam":"Doha Mudhar Hvp","own":"Sheikh Hamad Ali A Th Al Thani","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Dukhan Mudhar","co":"QA","sx":"M","dob":"2025-01-17","col":"Grey","sire":"Medan Al Shaqab","dam":"Soufiya Al Shaqab","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Najd Sh","co":"QA","sx":"M","dob":"2025-01-18","col":"Bay","sire":"Sa Faez Simbad","dam":"Sacarina O","own":"Mr. Nasser Misfer H A Al-Hajri","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Sharar Al Jazeel","co":"QA","sx":"M","dob":"2025-03-15","col":"Bay","sire":"D Shakhat","dam":"Emv Jyvanna El Madan","own":"Ma Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Katheer Al Ramad","co":"QA","sx":"M","dob":"2025-02-04","col":"Bay","sire":"Wf Gawin","dam":"Autumn Wind Mtc","own":"Alnasseria Farm","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Nader Al Wajba","co":"QA","sx":"M","dob":"2025-05-12","col":"Grey","sire":"Baz Aljassimya","dam":"Nourah Al Khalediah","own":"Al Wajba Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Sahm Alboraq","co":"QA","sx":"M","dob":"2025-03-16","col":"Bay","sire":"Sultan Al Zobara","dam":"Retaj Al Shaqab","own":"Al Boraq Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Raad Alboraq","co":"QA","sx":"M","dob":"2025-03-20","col":"Grey","sire":"Sultan Al Zobara","dam":"Sama Alboraq","own":"Al Boraq Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Kh Asad","co":"SA","sx":"M","dob":"2025-02-20","col":"Grey","sire":"El Tino","dam":"Sultana Al Jabriya","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Razi Al Bahya","co":"AE","sx":"M","dob":"2025-02-19","col":"Grey","sire":"Aj Kafu","dam":"Aj Rafiqa","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Najm Al Reeh","co":"QA","sx":"M","dob":"2025-04-01","col":"Bay","sire":"D Shajei","dam":"Caressa Svb","own":"Al Dhabi Stud","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Wafi Al Jood","co":"QA","sx":"M","dob":"2025-11-04","col":"Bay","sire":"D Wannas","dam":"Aj Bahja","own":"Hassan Khalid S G Al-Ghanim","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"Wahaj Al Yusufiya","co":"QA","sx":"M","dob":"2025-03-15","col":"Grey","sire":"Ash'Al Al E'Zz","dam":"Mouhsina Al Shaqab","own":"Al Yusufiya Arabians","email":"","phone":""},{"cls":6,"cn":"Yearling Colts","hn":"El Cairo Ea","co":"ES","sx":"M","dob":"2025-01-16","col":"Grey","sire":"Shanghai Ea","dam":"Ebony E.A.","own":"Mr. Mostafa Abdulrahman Rajab - Al Hayat Stud","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Yara Al Nasser","co":"BE","sx":"F","dob":"2024-02-26","col":"Grey","sire":"E.S. Harir","dam":"Ashadiya","own":"Sh. Nawaf Bin Nasser Al Thani - Al Nasser Stud","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Ikram Al Nasser","co":"QA","sx":"F","dob":"2024-04-04","col":"Chestnut","sire":"Lr Solo Mio","dam":"Tahseen Al Zobair","own":"Al Nasser Stud - Sheikh Nawaf Bin Nasser Al Thani","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Aryam Al Sraiya","co":"QA","sx":"F","dob":"2024-05-25","col":"Grey","sire":"Excalibur Ea","dam":"Reem Al Sraiya","own":"Al Sraiya Stud","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Alia Al Khor K","co":"BR","sx":"F","dob":"2024-04-15","col":"Grey","sire":"Gt Shardh","dam":"Aaliyah K","own":"Al Khor Stud","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"D Shagrah","co":"QA","sx":"F","dob":"2024-01-01","col":"Chestnut","sire":"D Fannan","dam":"D Ghamsharah","own":"Al Khor Stud","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Shihanah Kl","co":"QA","sx":"F","dob":"2024-04-27","col":"Grey","sire":"D Seraj","dam":"Dalma Kl","own":"Kaheel Stud","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Mz Afaal","co":"AE","sx":"F","dob":"2024-01-31","col":"Bay","sire":"Al Aryam Hasheem","dam":"Qr Andrea","own":"Mr. Mesfer Mohammed Mesfer Al Hajri","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Rds Remas","co":"BE","sx":"F","dob":"2024-06-09","col":"Grey","sire":"Ghaly Al Hawajer","dam":"Muranas Azeezah","own":"Al Yacoub Stud","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Tsaheel Al Shaqab","co":"QA","sx":"F","dob":"2024-03-21","col":"Grey","sire":"Excalibur Ea","dam":"Sarrah Al Jassimya","own":"Sheikh Jassim Saoud A J Al-Thani","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Antonina Cme","co":"US","sx":"F","dob":"2024-02-14","col":"Bay","sire":"Aria Rakeem","dam":"Sweet La Vita","own":"Muath Mohammed Abdulkarim Aba Numay","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"D Wana","co":"SA","sx":"F","dob":"2024-01-24","col":"Chestnut","sire":"Exxalt","dam":"D Heba","own":"Muath Mohammed Abdulkarim Aba Numay","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Marseille","co":"KW","sx":"F","dob":"2024-03-25","col":"Bay","sire":"D Nather","dam":"Sophia","own":"Mr. Mohammad Faleh Shafi Alajmi","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Sumu Al Mushlah","co":"QA","sx":"F","dob":"2024-02-10","col":"Bay","sire":"Raad Lembarak","dam":"Wc Mariellaa","own":"Mr. Abdulaziz Nasser M N Al-Khalifa","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Kh Malath","co":"SA","sx":"F","dob":"2024-02-01","col":"Grey","sire":"Royal Asad","dam":"Wj Malak","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Beisan Al Bahya","co":"AE","sx":"F","dob":"2024-02-18","col":"Grey","sire":"Aj Marzan","dam":"Aj Baynunah","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Radifa Al Shaqab","co":"QA","sx":"F","dob":"2024-10-30","col":"Bay","sire":"Wf Gawin","dam":"Irinah","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Mt Bateel","co":"SA","sx":"F","dob":"2024-02-05","col":"Bay","sire":"D Shakhat","dam":"Badawia Al Muawd","own":"Khalid Abdulaziz Almousa","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Makbola Al Shaqab","co":"QA","sx":"F","dob":"2024-12-30","col":"Grey","sire":"Berlin Mp","dam":"Nachmiya Al Shaqab","own":"Al-Salimya Stud","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Ey Manara","co":"QA","sx":"F","dob":"2024-04-07","col":"Grey","sire":"Excalibur Ea","dam":"Maaly","own":"Mr. Khalifa Ali Kh Kh Al-Suwaidi","email":"","phone":""},{"cls":4,"cn":"Fillies 2 Years Old","hn":"Napa Alnarh","co":"SA","sx":"F","dob":"2024-06-21","col":"Grey","sire":"Ferdan","dam":"Al Aryam Jenana","own":"Mohamed Jaber Ayesh Ali Al Humaid","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Dstoor Al Sraiya","co":"QA","sx":"M","dob":"2024-06-22","col":"Grey","sire":"Excalibur Ea","dam":"Anoud Al Sraiya","own":"Al Sraiya Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Zenith Al Shahania","co":"QA","sx":"M","dob":"2024-01-31","col":"Bay","sire":"Lr Solo Mio","dam":"Anwar Al Shahania","own":"Al Obayyah Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Ob Aseel","co":"QA","sx":"M","dob":"2024-04-10","col":"Bay","sire":"Ghaith Al Zobair","dam":"Khatoon Al Shaqab","own":"Al Obayyah Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Dandon Kl","co":"QA","sx":"M","dob":"2024-05-02","col":"Grey","sire":"Lr Solo Mio","dam":"Motatra Al Enaya","own":"Kaheel Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Shakhat Al Shahania","co":"QA","sx":"M","dob":"2024-03-31","col":"Bay","sire":"Excalibur Ea","dam":"Saherha Al Shahania","own":"Fahad Juma Al-Muhannadi","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Barq Umm Aludham","co":"QA","sx":"M","dob":"2024-04-20","col":"Grey","sire":"Ghaith Al Zobair","dam":"Aldana Umm Aludham","own":"Essa Juma R D Al-Muhannadi","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Shaqran Aljassimya","co":"QA","sx":"M","dob":"2024-04-07","col":"Chestnut","sire":"Lehon","dam":"Jazanh Aljassimya","own":"Mr. Mohammed Saad Al-Naimi","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Yazeed Mudhar","co":"QA","sx":"M","dob":"2024-01-16","col":"Grey","sire":"Rfi Farid","dam":"Doha Mudhar Hvp","own":"Sheikh Hamad Ali A Th Al Thani","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Zsq Azzam","co":"QA","sx":"M","dob":"2024-11-16","col":"Grey","sire":"Miqdam Gulfa","dam":"Ma Deva","own":"Mohammed Ghanim M K Al Hajri","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Hamza Al Jaham","co":"QA","sx":"M","dob":"2024-04-01","col":"Grey","sire":"Excalibur Ea","dam":"Bidayat Ibn Salamah","own":"Al Jaham Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Mh Lazaz","co":"QA","sx":"M","dob":"2024-02-25","col":"Grey","sire":"Shaman Al Zobara","dam":"Kholood Al Shaqab","own":"Mh Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Bahir Aa","co":"QA","sx":"M","dob":"2024-03-10","col":"Grey","sire":"S.M.A. Magic One","dam":"Nouf Aa","own":"Mr. Ahmed Abdulla A A Al-Mohannadi","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Aser Althamryia","co":"SA","sx":"M","dob":"2024-04-04","col":"Grey","sire":"Aj Faik","dam":"Meral Bd","own":"Mr. Essa Ali E I Al-Baloshi","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Arslan","co":"KW","sx":"M","dob":"2024-05-23","col":"Grey","sire":"Eks Farajj","dam":"Royal Eliza","own":"Alaseelah Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Sayer Al Bahya","co":"QA","sx":"M","dob":"2024-11-11","col":"Grey","sire":"Shanghai Ea","dam":"Aj Salwanah","own":"Al Mashrab Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Rakan Aljumail","co":"QA","sx":"M","dob":"2024-03-07","col":"Bay","sire":"Sa Faez Simbad","dam":"Assayla Al Shaqab","own":"Al Boraq Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Tawiq Dirgham","co":"SA","sx":"M","dob":"2024-01-01","col":"Chestnut","sire":"S M A Magic One","dam":"Taima Athbah","own":"Mohammed Abdulhaq Abdulwahab Alkhars/Alasl Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Shhab Al Zobair","co":"DE","sx":"M","dob":"2024-10-06","col":"Bay","sire":"Eks Farajj","dam":"Nawader Al Zobair","own":"Abdullah Meishal Almeishal","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Fahad Al Zobair","co":"QA","sx":"M","dob":"2024-02-05","col":"Bay","sire":"Mazyoun Al Bidayer","dam":"Toflah Al Zobair","own":"Aylan Stud","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Ar Ghaith","co":"SA","sx":"M","dob":"2024-05-28","col":"Bay","sire":"Ghaith Al Zobair","dam":"Mahbuba Al Muawd","own":"Waleed Khalid Ali Almajed","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Al Wasm Ib","co":"SA","sx":"M","dob":"2024-10-25","col":"Grey","sire":"Karem Al Bahya","dam":"Rasmah","own":"Fahad Abdullah Fahad Dakhel Alhaqbani Aldosari","email":"","phone":""},{"cls":7,"cn":"Colts 2 Years Old","hn":"Bayan Al Yasser","co":"EG","sx":"M","dob":"2024-04-25","col":"Bay","sire":"Amir Al Yasser","dam":"Badreya  Al Yasser","own":"Al Yasser Stud","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"D Hasbaa","co":"QA","sx":"F","dob":"2023-01-20","col":"Grey","sire":"Aj Ajban","dam":"D Jawharah","own":"Al Khor Stud","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Fay Aljassimya","co":"QA","sx":"F","dob":"2023-06-11","col":"Chestnut","sire":"Picasso Di Mar (It)","dam":"Fareeda Al Mar","own":"Al Hamama Stud","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Hessa Al Salem","co":"QA","sx":"F","dob":"2023-03-10","col":"Chestnut","sire":"Taiar Al Shaqab","dam":"Rihab Al Shaqab","own":"Al Salem Stud","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Rose Al Shahania","co":"QA","sx":"F","dob":"2023-02-27","col":"Bay","sire":"Rhan Al Shahania","dam":"Saherha Al Shahania","own":"Al Jaham Stud","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Haifa Al Tinhat","co":"SA","sx":"F","dob":"2023-03-25","col":"Grey","sire":"Mutabahi Al Hawajer","dam":"Noorah Al Tinhat","own":"Al Ghashamiya Stud","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Asfoorat Al Dana","co":"QA","sx":"F","dob":"2023-11-04","col":"Grey","sire":"Ghalab Al Shaqab","dam":"Asfoorat Al Safinat","own":"Al Dana Stud","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Emtenan Al Shahania","co":"QA","sx":"F","dob":"2023-03-19","col":"Bay","sire":"Rhan Al Shahania","dam":"Abha Qalams","own":"Mr. Ibrahim Issa M H Alfadala","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Jamrat Al Abdyah","co":"SA","sx":"F","dob":"2023-04-24","col":"Chestnut","sire":"Royal Asad","dam":"Sali Alenaya","own":"Rayan Abdulrahman B Alsayqal-Alsayaqul Stud","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Gezlan Al Saad","co":"QA","sx":"F","dob":"2023-10-05","col":"Bay","sire":"Gazwan Al Sraiya","dam":"Shoug Umm Aludham","own":"Al Saad Stud","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"T A Ndawi","co":"SA","sx":"F","dob":"2023-03-01","col":"Chestnut","sire":"Aj Faik","dam":"Wadhhah Altaflan","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Sawsan Al Shaqab","co":"QA","sx":"F","dob":"2023-03-15","col":"Grey","sire":"Eks Farajj","dam":"Ofw Emmalee","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":5,"cn":"Fillies 3 Years Old","hn":"Qamrah Alnahiy","co":"QA","sx":"F","dob":"2023-03-07","col":"Bay","sire":"Wadee Al Shaqab","dam":"Kadi Al Shaqab","own":"Jaralla Mohammed S A Al-Marri","email":"","phone":""},{"cls":8,"cn":"Colts 3 Years Old","hn":"Azzam Umm Aludham","co":"QA","sx":"M","dob":"2023-01-10","col":"Bay","sire":"Badiea Al Nasser","dam":"Ahood Umm Aludham","own":"Mr. Nasser Mohammed M A Al Hajri","email":"","phone":""},{"cls":8,"cn":"Colts 3 Years Old","hn":"Elr Farouk Aa","co":"BE","sx":"M","dob":"2023-06-21","col":"Bay","sire":"Ghaly Al Hawajer","dam":"Fayrooz Aa","own":"Al Yacoub Stud","email":"","phone":""},{"cls":8,"cn":"Colts 3 Years Old","hn":"Damascus Pcf","co":"US","sx":"M","dob":"2023-03-10","col":"Bay","sire":"Dominic M","dam":"Aliyah Vision Pcf","own":"Mohammed Saad K A Al-Naimi","email":"","phone":""},{"cls":8,"cn":"Colts 3 Years Old","hn":"Santorini O","co":"SE","sx":"M","dob":"2023-05-01","col":"Grey","sire":"Wf Gawin","dam":"Gazals Serina","own":"Al Dawasir Stud","email":"","phone":""},{"cls":8,"cn":"Colts 3 Years Old","hn":"Sa Al Muthaqaf","co":"QA","sx":"M","dob":"2023-08-23","col":"Grey","sire":"Fahad Al Rayyan","dam":"Jawaher Al Naif","own":"Salman Jassem Al Darwish","email":"","phone":""},{"cls":8,"cn":"Colts 3 Years Old","hn":"Ghayyath Al Shaqab","co":"QA","sx":"M","dob":"2023-04-24","col":"Chestnut","sire":"Eks Farajj","dam":"Aijana","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":8,"cn":"Colts 3 Years Old","hn":"Kh Habs","co":"SA","sx":"M","dob":"2023-04-07","col":"Bay","sire":"Royal Asad","dam":"Dhma Alaainah","own":"Sons Of Mubark Bin Hindi Al Khaldi Company","email":"","phone":""},{"cls":8,"cn":"Colts 3 Years Old","hn":"Meshal The Line","co":"SA","sx":"M","dob":"2023-05-10","col":"Bay","sire":"Ghaith Al Zobair","dam":"D Gezaila","own":"Abdullah Meishal Almeishal","email":"","phone":""},{"cls":8,"cn":"Colts 3 Years Old","hn":"Ghazi Al Sraiya","co":"QA","sx":"M","dob":"2023-04-19","col":"Chestnut","sire":"Gazwan Al Sraiya","dam":"Benedetta Inz","own":"Al Mushlah Stud","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"D Nashabeyyah","co":"AE","sx":"F","dob":"2021-03-27","col":"Grey","sire":"Excalibur Ea","dam":"D Muntaha","own":"Al Jazeel Stud","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Taima Al Nasser","co":"QA","sx":"F","dob":"2022-01-07","col":"Grey","sire":"Excalibur Ea","dam":"Loulou Al Nasser","own":"Al Nasser Stud - Sheikh Nawaf Bin Nasser Al Thani","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Jelsy Ma","co":"DE","sx":"F","dob":"2022-04-11","col":"Grey","sire":"Aj Nawash","dam":"Joleen Ma","own":"Al Khor Stud","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Bahiya S B M","co":"QA","sx":"F","dob":"2020-03-03","col":"Bay","sire":"Fa El Rasheem","dam":"Muranas Je Taime","own":"Nasser Mohammed M A Al Hajri","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"D Wedad","co":"AE","sx":"F","dob":"2022-02-21","col":"Chestnut","sire":"Fa El Rasheem","dam":"D Wasayef","own":"Mr. Nasser Mohammed M A Al Hajri","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Sabha Al Khor","co":"QA","sx":"F","dob":"2021-10-12","col":"Bay","sire":"Halul Al Khor","dam":"Rayyanat Al Khor","own":"Al Dawasir Stud","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Farida Mudhar","co":"QA","sx":"F","dob":"2022-04-02","col":"Bay","sire":"Farid Al Hawajer","dam":"A. L. R. Aseela","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Shaikha Mudhar","co":"QA","sx":"F","dob":"2022-01-10","col":"Bay","sire":"Marajj","dam":"Nahawand Al Zobair","own":"Sheikh Hamad Ali A Th Al Thani","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Bashayer Al Bawadi","co":"QA","sx":"F","dob":"2020-01-21","col":"Grey","sire":"Al Milan","dam":"Just This Once","own":"Al Bawadi Stud","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Mayaan Al Laheef","co":"QA","sx":"F","dob":"2021-03-06","col":"Chestnut","sire":"Fa Starlight","dam":"Maharaani","own":"Al Laheef Stud","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Meznah Almuawd","co":"QA","sx":"F","dob":"2022-02-14","col":"Grey","sire":"Fuerte","dam":"Mira Des Alpes","own":"Albayariq Stud","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Lulu Alriffa","co":"SA","sx":"F","dob":"2021-06-01","col":"Chestnut","sire":"Aaser Athbah","dam":"Darjah Athbah","own":"Rayan Abdulrahman B Alsayqal","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Mozn Albadr","co":"AE","sx":"F","dob":"2021-01-27","col":"Grey","sire":"S.M.A. Magic One","dam":"Gaja Luna","own":"Ahmad Saleh Moshref","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Ferdous Al Nawader","co":"BH","sx":"F","dob":"2022-01-20","col":"Grey","sire":"Mushtabah Al Zobair","dam":"D Nameerah","own":"Al Nawader Arabians (Bh)","email":"","phone":""},{"cls":9,"cn":"Mares 4-6 Years Old","hn":"Bint Marzan","co":"QA","sx":"F","dob":"2022-01-02","col":"Grey","sire":"Aj Marzan","dam":"Aj Dina","own":"Ahmad Abdulla A A Al-Kuwari","email":"","phone":""},{"cls":12,"cn":"Stallions 4-6 Years Old","hn":"Omeir Al Sraiya","co":"QA","sx":"M","dob":"2022-05-29","col":"Bay","sire":"Amir Al Reeh","dam":"Shalfa Al Sraiya","own":"Al Sraiya Stud","email":"","phone":""},{"cls":12,"cn":"Stallions 4-6 Years Old","hn":"Jowel Mm","co":"FR","sx":"M","dob":"2022-04-27","col":"Bay","sire":"Jewel Rc","dam":"Haifa Al Adeyat","own":"Al Obayyah Stud","email":"","phone":""},{"cls":12,"cn":"Stallions 4-6 Years Old","hn":"Aj Tayam","co":"AE","sx":"M","dob":"2021-10-28","col":"Bay","sire":"Antaris Os","dam":"Aj Tarim","own":"Mr. Nasser Mohammed M A Al Hajri","email":"","phone":""},{"cls":12,"cn":"Stallions 4-6 Years Old","hn":"Bahi Al Jaham","co":"QA","sx":"M","dob":"2020-11-10","col":"Bay","sire":"Badiea Al Nasser","dam":"Brea Ea","own":"Al Jaham Stud","email":"","phone":""},{"cls":12,"cn":"Stallions 4-6 Years Old","hn":"Faris Al Nasiat","co":"AE","sx":"M","dob":"2021-12-19","col":"Grey","sire":"Emerald J","dam":"Aj Farha","own":"Al Dana Stud","email":"","phone":""},{"cls":12,"cn":"Stallions 4-6 Years Old","hn":"D Serdah","co":"SA","sx":"M","dob":"2021-01-13","col":"Chestnut","sire":"D Seraj","dam":"D Nawal","own":"Essam Abu Bakur Ahmad Almalayo","email":"","phone":""},{"cls":12,"cn":"Stallions 4-6 Years Old","hn":"Kahil Al Khuwair","co":"QA","sx":"M","dob":"2022-12-01","col":"Grey","sire":"Ghazi Al Nasser","dam":"Goot Al Shaqab","own":"Al Khuwair Stud","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"Alkaydah Al Sraiya","co":"QA","sx":"F","dob":"2019-06-24","col":"Grey","sire":"Naseem Al Rashediah","dam":"Makhida","own":"Al Sraiya Stud","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"Najla Umm Aludham","co":"QA","sx":"F","dob":"2017-01-06","col":"Grey","sire":"Wadee Al Shaqab","dam":"Da Magic Moment","own":"Mr. Nasser Mohammed Mesfer Al Hajri","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"D Fala","co":"AE","sx":"F","dob":"2016-02-25","col":"Grey","sire":"Emerald J","dam":"Fer Fiera Blanca","own":"Al Salem Stud","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"Zahra Al Yasrah","co":"QA","sx":"F","dob":"2016-03-04","col":"Grey","sire":"Wadee Al Shaqab","dam":"Bellatrix","own":"Al Yasrah Stud","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"Kholood Al Shaqab","co":"QA","sx":"F","dob":"2017-12-22","col":"Grey","sire":"Wh Justice","dam":"Rhr Vallacontessa","own":"Mh Stud","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"Ag Basma","co":"SA","sx":"F","dob":"2017-07-27","col":"Grey","sire":"Nahar Al Rashediah","dam":"F.E.S Chilly","own":"Muath Mohammed Abdulkarim Aba Numay","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"Anbara Al Shaqab","co":"QA","sx":"F","dob":"2018-12-10","col":"Grey","sire":"Shagran Al Nasser","dam":"Shalha Al Shaqab","own":"Altuwaim Stud","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"D Manawy","co":"SA","sx":"F","dob":"2017-10-24","col":"Bay","sire":"Fa El Rasheem","dam":"D Muna","own":"Hamad Mahdi M Alyami","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"Kiara Aljassimyya","co":"US","sx":"F","dob":"2017-01-05","col":"Grey","sire":"Equator","dam":"Karinena Dakar","own":"Raed Saad Nasser Aldaghri","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"Najla Athbah","co":"BH","sx":"F","dob":"2019-05-27","col":"Grey","sire":"Shanghai Ea","dam":"Treasure Nabila Jq","own":"Mr Ali Abdali Fakharawi - Al Nassim Stud","email":"","phone":""},{"cls":10,"cn":"Mares 7-10 Years Old","hn":"D Aasaleyyah","co":"AE","sx":"F","dob":"2018-02-25","col":"Chestnut","sire":"Fa El Rasheem","dam":"Elle Flamenca","own":"Mostafa Abdulrahman Rajab","email":"","phone":""},{"cls":13,"cn":"Stallions 7-10 Years Old","hn":"Badi Athbah","co":"BE","sx":"M","dob":"2016-02-08","col":"Bay","sire":"Eks Alihandro","dam":"Fedora Rg","own":"Al Jazeel Stud","email":"","phone":""},{"cls":13,"cn":"Stallions 7-10 Years Old","hn":"Kanz Lnj","co":"SA","sx":"M","dob":"2018-04-04","col":"Bay","sire":"Kanz Al Bidayer","dam":"Fadya Lnj","own":"Hisham Abdullah Wakeel Alshaikh","email":"","phone":""},{"cls":11,"cn":"Mares 11+ Years Old","hn":"Farona","co":"DE","sx":"F","dob":"2011-03-31","col":"Grey","sire":"Al Milan","dam":"Farida Bint Khidar","own":"Mr. Nasser Mohammed M A Al Hajri","email":"","phone":""},{"cls":11,"cn":"Mares 11+ Years Old","hn":"Abha Al Hamad","co":"KW","sx":"F","dob":"2015-10-10","col":"Grey","sire":"Aj Dhaen Al Shaaba","dam":"H Elana H","own":"Mr. Khalid Meqbil F F Alqahtani","email":"","phone":""},{"cls":11,"cn":"Mares 11+ Years Old","hn":"D Shatha","co":"QA","sx":"F","dob":"2015-02-20","col":"Grey","sire":"Rfi Farid","dam":"D Sahabah","own":"Al Salem Stud","email":"","phone":""},{"cls":11,"cn":"Mares 11+ Years Old","hn":"Fs Venezuela","co":"SA","sx":"F","dob":"2013-02-15","col":"Chestnut","sire":"Vervaldee","dam":"Fs Madeline","own":"Muath Mohammed Abdulkarim Aba Numay","email":"","phone":""},{"cls":11,"cn":"Mares 11+ Years Old","hn":"Jumana Del Palazzotto","co":"KW","sx":"F","dob":"2014-01-26","col":"Grey","sire":"Wh Justice","dam":"Zb Lamante","own":"Raed Saad Nasser Aldaghri","email":"","phone":""},{"cls":11,"cn":"Mares 11+ Years Old","hn":"Bint Sultan","co":"QA","sx":"F","dob":"2015-02-03","col":"Grey","sire":"Sultan Al Shaqab","dam":"As Michel","own":"Al Adeed Stud","email":"","phone":""},{"cls":14,"cn":"Stallions 11+ Years Old","hn":"Lammah Al Naif","co":"QA","sx":"M","dob":"2013-01-27","col":"Grey","sire":"Fadi Al Shaqab","dam":"Batoul Al Naif","own":"Al Aswadiyah Stud","email":"","phone":""},{"cls":14,"cn":"Stallions 11+ Years Old","hn":"Baher Al Shaqab","co":"QA","sx":"M","dob":"2014-06-09","col":"Bay","sire":"Kahil Al Shaqab","dam":"Vanessa Al Shaqab","own":"Alnasseria Farm","email":"","phone":""},{"cls":14,"cn":"Stallions 11+ Years Old","hn":"Zain Al Thumama","co":"QA","sx":"M","dob":"2015-03-01","col":"Bay","sire":"Wadee Al Shaqab","dam":"Elle Kaliyah","own":"Al Boraq Stud","email":"","phone":""},{"cls":14,"cn":"Stallions 11+ Years Old","hn":"Just Of Glory V","co":"PL","sx":"M","dob":"2012-04-28","col":"Grey","sire":"Wh Justice","dam":"Bess-Gloria","own":"Nasser Khaled Nasser Aludail","email":"","phone":""},{"cls":14,"cn":"Stallions 11+ Years Old","hn":"Falah Al Shaqab","co":"IT","sx":"M","dob":"2013-05-17","col":"Chestnut","sire":"Fadi Al Shaqab","dam":"Joseph Just Emotion","own":"Al Adeed Stud","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Ghala Al Nasser","co":"QA","sx":"F","dob":"2026-02-14","col":"Bay","sire":"Ghaly Al Hawajer","dam":"Arwa Al Nasser","own":"Al Nasser Stud - Sheikh Nawaf Bin Nasser Al Thani","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Bayan Al Nasser","co":"QA","sx":"F","dob":"2026-02-20","col":"Grey","sire":"Baz Aljassimya","dam":"Bshaier Al Nasser","own":"Al Nasser Stud - Sheikh Nawaf Bin Nasser Al Thani","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Diyala Al Nasser","co":"QA","sx":"F","dob":"2026-03-17","col":"Grey","sire":"Tm Itaipu","dam":"Hattan Al Nasser","own":"Al Nasser Stud - Sheikh Nawaf Bin Nasser Al Thani","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Lina Mudhar","co":"QA","sx":"F","dob":"2026-03-15","col":"Grey","sire":"Shiraz De Lafon (Fr)","dam":"A.L.R. Aseela","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Katara Mudhar","co":"QA","sx":"F","dob":"2026-01-25","col":"Bay","sire":"Ghaly Al Hawajer","dam":"Rodeena Al Zobair","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Lamia Mudhar","co":"QA","sx":"F","dob":"2026-01-18","col":"Grey","sire":"Shiraz De Lafon (Fr)","dam":"Sabha Mudhar","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Jasmine Mudhar","co":"QA","sx":"F","dob":"2026-01-15","col":"Grey","sire":"Amaar","dam":"Shaikha Mudhar","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Sakhiyah Al Ammar (Qa)","co":"QA","sx":"F","dob":"2026-02-10","col":"Bay","sire":"Badiea Al Nasser","dam":"Al Ammaria Al Ammar","own":"Alammar Stud","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Almaha Umm Aludham","co":"QA","sx":"F","dob":"2026-02-05","col":"Bay","sire":"Aj Tayam","dam":"Mzoon Al Diriyah","own":"Mesfer Mohammed Al-Hajri - Umm Aludham Stud (Qa)","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Mayar Al Ammar (Qa)","co":"QA","sx":"F","dob":"2026-04-22","col":"Chestnut","sire":"D Tumooh","dam":"Asrar Al Ammar","own":"Al Ammar Stud","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Dakhtanus","co":"QA","sx":"F","dob":"2026-01-07","col":"Grey","sire":"Coperfield Ora","dam":"Kadi Al Shaqab","own":"Mr. Jaralla Mohammed S A Al-Marri","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Mh Masah","co":"QA","sx":"F","dob":"2026-01-05","col":"Grey","sire":"Berlin Mp","dam":"Aysha Al Zobara","own":"Mh Stud","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Jaleela Al Jaham","co":"QA","sx":"F","dob":"2026-02-24","col":"Grey","sire":"Rajeh Al Adwan","dam":"Marwa Al Kheesa","own":"Al Jaham Stud","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Nooran Mudhar","co":"QA","sx":"F","dob":"2026-02-06","col":"Bay","sire":"Vitorio To","dam":"Farida Mudhar","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Naflah Al Ammar","co":"QA","sx":"F","dob":"2026-02-20","col":"Bay","sire":"Halul Al Khor","dam":"Tajweed Al Shaqab","own":"Khalifa Abdulaziz K A Al Dosari","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Ajayeb Sh","co":"QA","sx":"F","dob":"2026-03-01","col":"Grey","sire":"Berlin Mp","dam":"Shareqat Al E'Zz","own":"Mr. Nasser Misfer H A Al-Hajri","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Wilaya Al Shakra","co":"QA","sx":"F","dob":"2026-03-12","col":"Bay","sire":"Azzam Al Sraiya","dam":"El Masoufah","own":"Al Shakra Stud","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Noora Hleetan (Qa)","co":"QA","sx":"F","dob":"2026-03-15","col":"Bay","sire":"Ghaly Al Hawajer","dam":"Rawdah Al Watan","own":"Hleetan Stud","email":"","phone":""},{"cls":1,"cn":"Filly Foals","hn":"Milhat Najd","co":"QA","sx":"F","dob":"2026-01-30","col":"Bay","sire":"Lehon","dam":"Bella Romantica Ga","own":"Najd  Stud","email":"","phone":""},{"cls":2,"cn":"Colt Foals","hn":"Sayaf Al Nasser","co":"QA","sx":"M","dob":"2026-01-17","col":"Grey","sire":"Tm Itaipu","dam":"Bdour Al Nasser","own":"Al Hamama Stud","email":"","phone":""},{"cls":2,"cn":"Colt Foals","hn":"Bashir Mudhar","co":"QA","sx":"M","dob":"2026-04-25","col":"Grey","sire":"Medan Al Shaqab","dam":"Shalwa Al Shaqab","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":2,"cn":"Colt Foals","hn":"Ghaly Mudhar","co":"QA","sx":"M","dob":"2026-03-10","col":"Bay","sire":"Ghaly Al Hawajer","dam":"Farida Mudhar","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":2,"cn":"Colt Foals","hn":"Gazal Mudhar","co":"QA","sx":"M","dob":"2026-01-24","col":"Bay","sire":"Rfi Unique","dam":"Shaikha Mudhar","own":"Sheikh Hamad Ali A Th Al-Thani","email":"","phone":""},{"cls":2,"cn":"Colt Foals","hn":"Ob Saham","co":"QA","sx":"M","dob":"2026-04-03","col":"Bay","sire":"Jowel Mm","dam":"Khatoon Al Shaqab","own":"Al Obayyah Stud","email":"","phone":""},{"cls":2,"cn":"Colt Foals","hn":"Ayyal Umm Aludham","co":"QA","sx":"M","dob":"2026-01-02","col":"Bay","sire":"Aj Tayam","dam":"Najla Umm Aludham","own":"Mr Nasser Mohammed Misfer Al Hajiri","email":"","phone":""},{"cls":2,"cn":"Colt Foals","hn":"Laith Umm Aludham","co":"QA","sx":"M","dob":"2026-04-02","col":"Bay","sire":"Lehon (It)","dam":"Al Jazi Umm Aludham","own":"Mr Nasser Mohammed Misfer Al Hajiri","email":"","phone":""},{"cls":2,"cn":"Colt Foals","hn":"Fahad Al Hamdan","co":"QA","sx":"M","dob":"2026-02-17","col":"Chestnut","sire":"Halul Al Khor","dam":"Rk Neom","own":"Al Hamdan Stud","email":"","phone":""},{"cls":2,"cn":"Colt Foals","hn":"Aq Sahm","co":"QA","sx":"M","dob":"2026-02-06","col":"Bay","sire":"Aj Nabhan","dam":"Aahd Al Yacoub","own":"Al Yacoub Stud","email":"","phone":""}]/*DATA_END*/.map(h=>({...h, paid: !!h.paid}));
 
-// ---------- Cloud database (Supabase / Postgres) ----------
-const [dbEmail,dbPass,dbSignIn,dbSignOut,ghPull,publishNowBtn,exportAllBtn,authNote] = ['dbEmail','dbPass','dbSignIn','dbSignOut','ghPull','publishNowBtn','exportAllBtn','authNote'].map(id=>document.getElementById(id));
+// ---------- GitHub sync (data.xlsx in the repo is the database) ----------
+const [ghOwner,ghRepo,ghBranch,ghPath,ghToken,ghAuto,ghContacts,ghSave,ghPull,publishNowBtn,ghTest,ghDiag] = ['ghOwner','ghRepo','ghBranch','ghPath','ghToken','ghAuto','ghContacts','ghSave','ghPull','publishNowBtn','ghTest','ghDiag'].map(id=>document.getElementById(id));
 const APP_MODE = 'shared';          // 'admin' (admin.html) or 'shared' (index.html)
-const CFG = window.ASQ_CONFIG || {};
-const sb = (CFG.supabaseUrl && CFG.supabaseKey && window.supabase) ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey) : null;
-let lastDataSig='', adminDirty=false, editSeq=0, saveTimer=null, saveChain=Promise.resolve(), remoteLoaded=false, signedIn=false;
-let savedSig={}, savedContacts={};
+const DATA_FILE = 'data.xlsx';
+const GH_KEY = 'asq_gh_cfg';
+let lastDataSig = '', adminDirty = false, editSeq = 0, publishTimer = null, publishChain = Promise.resolve();
 function setSyncNote(t){ ['dbSyncNote','liveStatus'].forEach(id=>{ const n=document.getElementById(id); if(n) n.textContent=t; }); }
-function newId(){ return (crypto.randomUUID ? crypto.randomUUID() : 'id-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10)); }
 
-// horse object <-> database row
-function rowOf(h){ return {class_no:Number(h.cls)||null, class_name:h.cn||'', horse_name:h.hn||'', country:h.co||'', sex:h.sx||'', birth_date:h.dob||'', color:h.col||'', sire:h.sire||'', dam:h.dam||'', owner:h.own||'', paid:!!h.paid}; }
-function toRow(h){ return {...rowOf(h), id:h.id, updated_at:new Date().toISOString()}; }
-function sigRow(h){ return JSON.stringify(rowOf(h)); }
-function fromRow(r, contacts){
-  const c = contacts[r.owner] || {};
-  return {id:r.id, cls:r.class_no||0, cn:r.class_name||'', hn:r.horse_name||'', co:r.country||'', sx:r.sex||'', dob:r.birth_date||'', col:r.color||'', sire:r.sire||'', dam:r.dam||'', own:r.owner||'', email:c.email||'', phone:c.phone||'', paid:!!r.paid};
+function rowsToHorses(rows){
+  return rows.map(r=>{
+    const hn = findVal(r,['Horsename','Horse Name','Horse']);
+    if(!hn) return null;
+    const paidRaw = String(findVal(r,['Paid','Payment Status','Payment','Status'])||'').toLowerCase().trim();
+    return {
+      cls: Number(findVal(r,['Class']))||0,
+      cn: String(findVal(r,['Class name','Class Name'])||''),
+      hn: String(hn),
+      co: String(findVal(r,['Horse country','Country'])||''),
+      sx: String(findVal(r,['Sex'])||''),
+      dob: toDateStr(findVal(r,['Birth date','DOB','Date of Birth'])),
+      col: String(findVal(r,['Color','Colour'])||''),
+      sire: String(findVal(r,['Sire'])||''),
+      dam: String(findVal(r,['Dam'])||''),
+      own: String(findVal(r,['Owner'])||'').trim(),
+      email: String(findVal(r,['Owner Email','Email','E-mail'])||'').trim(),
+      phone: String(findVal(r,['Owner Phone','Phone','Phone Number','Mobile'])||'').trim(),
+      paid: ['yes','y','paid','true','1'].includes(paidRaw)
+    };
+  }).filter(Boolean);
 }
 
 async function fetchRemote(){
-  const q = await sb.from('horses').select('*').order('pos',{ascending:true}).limit(5000);
-  if(q.error) throw new Error(q.error.message);
-  const contacts = {};
-  if(APP_MODE==='admin' && signedIn){
-    const r = await sb.from('owner_contacts').select('*');
-    if(!r.error) (r.data||[]).forEach(c=>{ contacts[c.owner]=c; });
-  }
+  const res = await fetch(DATA_FILE+'?t='+Date.now(), {cache:'no-store'});
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const wb = XLSX.read(await res.arrayBuffer(), {type:'array'});
+  const horses = rowsToHorses(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:''}));
+  if(!horses.length) throw new Error('no rows in data file');
   let updatedAt = null;
-  const m = await sb.from('app_meta').select('value').eq('key','updated_at').maybeSingle();
-  if(!m.error && m.data) updatedAt = m.data.value;
-  return {rows:q.data||[], contacts, updatedAt};
+  if(wb.Sheets['Meta']){
+    const row = XLSX.utils.sheet_to_json(wb.Sheets['Meta'], {header:1}).find(r=>r[0]==='updatedAt');
+    if(row) updatedAt = row[1];
+  }
+  return {horses, updatedAt};
 }
 
-// Load the latest data and refresh whatever is on screen (only if it changed).
+// Pull the latest data.xlsx and refresh whatever is on screen (only if it changed).
 async function syncFromRemote(force, manual){
-  if(!sb){ setSyncNote('Database not configured yet — showing built-in data. Add your Supabase URL and key to config.js.'); return false; }
   if(manual) adminDirty = false;
   try{
-    const {rows, contacts, updatedAt} = await fetchRemote();
-    const horses = rows.map(r=>fromRow(r, contacts));
-    const skip = APP_MODE==='admin' && adminDirty;            // never overwrite unsaved admin edits
-    if(!skip){
-      savedSig = {}; horses.forEach(h=>{ savedSig[h.id]=sigRow(h); });
-      savedContacts = {}; Object.values(contacts).forEach(c=>{ savedContacts[c.owner]=(c.email||'')+'|'+(c.phone||''); });
-      remoteLoaded = true;
-      const sig = JSON.stringify(horses);
-      if(horses.length && (force || sig!==lastDataSig)){
-        lastDataSig = sig; HORSES = horses;
-        const a = document.querySelector('.view.active'); if(a) activateView(a.id);
-      }
-      setSyncNote(horses.length ? 'Live data · last updated '+(updatedAt?new Date(updatedAt).toLocaleString():'(time unknown)')+' · checked '+new Date().toLocaleTimeString()
-                                : 'Database connected but empty — '+(APP_MODE==='admin'?'sign in and it will be filled from the list shown.':'nothing published yet.'));
+    const {horses, updatedAt} = await fetchRemote();
+    const skip = APP_MODE==='admin' && adminDirty;           // never overwrite unpublished admin edits
+    const sig = JSON.stringify(horses);
+    if(!skip && (force || sig!==lastDataSig)){
+      lastDataSig = sig; HORSES = horses;
+      const a = document.querySelector('.view.active'); if(a) activateView(a.id);
     }
+    if(!skip) setSyncNote('Data last updated '+(updatedAt?new Date(updatedAt).toLocaleString():'(time unknown)')+' · checked '+new Date().toLocaleTimeString());
     return true;
-  } catch(e){ setSyncNote('Could not reach the database ('+(e.message||e)+') — showing last known data.'); return false; }
-}
-
-// ----- Admin: sign in + save -----
-async function refreshAuth(){
-  if(!sb){ authNote.textContent = 'Database not configured: add your Supabase URL and key to config.js (see README).'; return; }
-  const {data} = await sb.auth.getSession();
-  signedIn = !!(data && data.session);
-  authNote.textContent = signedIn ? 'Signed in as '+data.session.user.email+' — changes save to the database automatically.'
-                                  : 'Not signed in — you can edit, but nothing is saved to the shared database until you sign in.';
-  dbSignIn.style.display = signedIn ? 'none' : ''; dbSignOut.style.display = signedIn ? '' : 'none';
-  dbEmail.parentElement.style.display = dbPass.parentElement.style.display = signedIn ? 'none' : '';
-}
-dbSignIn.addEventListener('click', async ()=>{
-  if(!sb) return refreshAuth();
-  authNote.textContent = 'Signing in…';
-  const {error} = await sb.auth.signInWithPassword({email:dbEmail.value.trim(), password:dbPass.value});
-  dbPass.value = '';
-  if(error){ authNote.textContent = 'Sign-in failed: '+error.message; return; }
-  await refreshAuth(); await syncFromRemote(false);
-  if(adminDirty) saveNow();
-});
-dbSignOut.addEventListener('click', async ()=>{ await sb.auth.signOut(); await refreshAuth(); });
-
-async function doSave(){
-  if(!sb){ setSyncNote('Database not configured — change kept on this device only.'); return; }
-  if(!signedIn){ setSyncNote('Sign in (Database tab) to save changes to the shared database.'); return; }
-  if(!remoteLoaded){ setSyncNote('Still connecting to the database — try again in a moment.'); return; }
-  const seq = editSeq;
-  setSyncNote('Saving to database…');
-  try{
-    const ids = new Set(HORSES.filter(h=>h.id).map(h=>h.id));
-    const gone = Object.keys(savedSig).filter(id=>!ids.has(id));
-    for(let i=0;i<gone.length;i+=100){
-      const chunk = gone.slice(i,i+100);
-      const {error} = await sb.from('horses').delete().in('id', chunk); if(error) throw error;
-      chunk.forEach(id=>{ delete savedSig[id]; });
-    }
-    HORSES.forEach(h=>{ if(!h.id) h.id = newId(); });
-    const dirty = HORSES.filter(h=>savedSig[h.id]!==sigRow(h));
-    for(let i=0;i<dirty.length;i+=200){
-      const chunk = dirty.slice(i,i+200);
-      const {error} = await sb.from('horses').upsert(chunk.map(toRow), {onConflict:'id'}); if(error) throw error;
-      chunk.forEach(h=>{ savedSig[h.id]=sigRow(h); });
-    }
-    // owner contacts live in their own admin-only table
-    const cm = {};
-    HORSES.forEach(h=>{ if(!h.own) return; const c = cm[h.own] = cm[h.own] || {owner:h.own, email:'', phone:''}; if(!c.email && h.email) c.email=h.email; if(!c.phone && h.phone) c.phone=h.phone; });
-    const cdirty = Object.values(cm).filter(c=>((c.email||'')+'|'+(c.phone||''))!==(savedContacts[c.owner]??'|'));
-    if(cdirty.length){
-      const {error} = await sb.from('owner_contacts').upsert(cdirty.map(c=>({...c, updated_at:new Date().toISOString()})), {onConflict:'owner'}); if(error) throw error;
-      cdirty.forEach(c=>{ savedContacts[c.owner]=(c.email||'')+'|'+(c.phone||''); });
-    }
-    const stamp = new Date().toISOString();
-    const mr = await sb.from('app_meta').upsert({key:'updated_at', value:stamp}, {onConflict:'key'}); if(mr.error) throw mr.error;
-    lastDataSig = ''; 
-    if(seq===editSeq) adminDirty = false; else { clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 500); }
-    setSyncNote('Saved ✓ '+new Date(stamp).toLocaleTimeString()+' — the shared dashboard updates live.');
   } catch(e){
-    const msg = (e && e.message) || String(e);
-    setSyncNote('Save failed: '+msg+(/row-level security/i.test(msg)?' — this account is not the admin email set in setup.sql.':''));
+    setSyncNote(location.protocol==='file:' ? 'Opened from a file — showing built-in data (live data works once hosted).'
+      : /404/.test(e.message) ? (APP_MODE==='admin' ? 'data.xlsx is not on your website yet — showing built-in data. Click "Publish to GitHub now" (Data Tools) to create it.' : 'The data file is not published yet — showing built-in data. Ask the admin to publish.')
+      : 'Could not load data.xlsx ('+e.message+') — showing last known data.');
+    return false;
   }
 }
-function saveNow(){ clearTimeout(saveTimer); saveChain = saveChain.then(doSave); return saveChain; }
+
+// ----- Admin: publish data.xlsx to GitHub -----
+function ghCfg(){ try{ return JSON.parse(localStorage.getItem(GH_KEY))||{}; }catch(e){ return {}; } }
+function cleanRepoFields(){
+  let o = ghOwner.value.trim(), r = ghRepo.value.trim();
+  const m = (o+' '+r).match(/github\.com[\/:]([^\/\s]+)\/([^\/\s#?]+)/i);      // pasted a full GitHub URL
+  if(m){ o = m[1]; r = m[2]; }
+  if(o.includes('/') && !r){ const p = o.split('/'); o = p[0]; r = p[1]; }          // typed user/repo in the first box
+  r = r.replace(/\.git$/i,'').replace(/^\/+|\/+$/g,'');
+  ghOwner.value = o; ghRepo.value = r; ghToken.value = ghToken.value.replace(/\s+/g,'');
+}
+function readGhFields(){
+  cleanRepoFields();
+  return { owner:ghOwner.value.trim(), repo:ghRepo.value.trim(), branch:ghBranch.value.trim()||'main', path:ghPath.value.trim()||'data.xlsx',
+           token:ghToken.value.trim(), auto:ghAuto.checked, contacts:ghContacts.checked };
+}
+function loadGhFields(){
+  const c = ghCfg();
+  ghOwner.value=c.owner||''; ghRepo.value=c.repo||''; ghBranch.value=c.branch||'main'; ghPath.value=c.path||'data.xlsx';
+  ghToken.value=c.token||''; ghAuto.checked=c.auto!==false; ghContacts.checked=c.contacts!==false;
+}
+function saveGhFields(){ try{ localStorage.setItem(GH_KEY, JSON.stringify(readGhFields())); return true; }catch(e){ return false; } }
+
+function buildXlsxBase64(includeContacts){
+  const rows = HORSES.map(h=>{
+    const o = {'Class':h.cls,'Class name':h.cn,'Horsename':h.hn,'Horse country':h.co,'Sex':h.sx,'Birth date':h.dob,'Color':h.col,'Sire':h.sire,'Dam':h.dam,'Owner':h.own};
+    if(includeContacts){ o['Owner Email']=h.email||''; o['Owner Phone']=h.phone||''; }
+    o['Paid'] = h.paid ? 'Yes' : 'No';
+    return o;
+  });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Catalogue');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['updatedAt', new Date().toISOString()]]), 'Meta');
+  return XLSX.write(wb, {bookType:'xlsx', type:'base64'});
+}
+
+async function doPublish(){
+  const c = ghCfg();
+  if(!c.owner || !c.repo || !c.token){ setSyncNote('Enter GitHub owner, repository and token, then click Save settings.'); return; }
+  const branch = c.branch||'main', path = c.path||'data.xlsx';
+  const api = `https://api.github.com/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}/contents/${path.split('/').map(encodeURIComponent).join('/')}`;
+  const H = {'Authorization':'Bearer '+c.token, 'Accept':'application/vnd.github+json'};
+  const seq = editSeq;
+  setSyncNote('Publishing to GitHub…');
+  try{
+    for(let attempt=0; attempt<2; attempt++){
+      let sha;
+      const g = await fetch(api+'?ref='+encodeURIComponent(branch)+'&t='+Date.now(), {headers:H, cache:'no-store'});
+      if(g.ok) sha = (await g.json()).sha;
+      else if(g.status!==404) throw new Error(ghErr(g.status, await ghMsg(g), false));
+      const body = {message:'Update catalogue data '+new Date().toISOString(), content:buildXlsxBase64(c.contacts!==false), branch};
+      if(sha) body.sha = sha;
+      const p = await fetch(api, {method:'PUT', headers:{...H,'Content-Type':'application/json'}, body:JSON.stringify(body)});
+      if(p.ok){
+        if(seq===editSeq) adminDirty = false; else schedulePublish();
+        setSyncNote('Published ✓ '+new Date().toLocaleTimeString()+' — the shared dashboard picks it up within a few minutes.');
+        return;
+      }
+      if(p.status!==409 && p.status!==422) throw new Error(ghErr(p.status, await ghMsg(p), true));
+    }
+    throw new Error('file changed on GitHub while saving — click Publish again');
+  } catch(e){ setSyncNote('Publish failed: '+(e instanceof TypeError ? 'cannot reach api.github.com — check internet, VPN/firewall or an ad-blocker, then click Test connection.' : e.message)); }
+}
+function publishNow(){ clearTimeout(publishTimer); publishChain = publishChain.then(doPublish); return publishChain; }
+function schedulePublish(){ clearTimeout(publishTimer); publishTimer = setTimeout(publishNow, 3000); }
 
 // Called after every edit / paid tick / Excel apply.
 function pushToDb(){
   adminDirty = true; editSeq++;
-  if(APP_MODE!=='admin' || !sb || !signedIn){
-    setSyncNote(!sb ? 'Database not configured — change kept on this device only.' : 'Changed — sign in (Database tab) to save it to the shared database.');
+  const c = ghCfg();
+  if(APP_MODE!=='admin' || !c.token || c.auto===false){
+    setSyncNote(c.token ? 'Changed — click "Publish to GitHub now" to sync the shared dashboard.' : 'Changed on this device only — add GitHub settings to sync the shared dashboard.');
     return;
   }
-  setSyncNote('Change detected — saving…');
-  clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 1500);
+  setSyncNote('Change detected — publishing in 3 seconds…');
+  schedulePublish();
 }
-window.addEventListener('beforeunload', e=>{ if(APP_MODE==='admin' && adminDirty){ e.preventDefault(); e.returnValue=''; } });
+window.addEventListener('beforeunload', e=>{ if(APP_MODE==='admin' && adminDirty && ghCfg().token){ e.preventDefault(); e.returnValue=''; } });
 
-publishNowBtn.addEventListener('click', ()=>{ if(!signedIn) setSyncNote('Sign in first (Database tab).'); else saveNow(); });
+ghSave.addEventListener('click', ()=>{ setSyncNote(saveGhFields() ? 'GitHub settings saved on this device.' : 'Could not save settings in this browser.'); });
+publishNowBtn.addEventListener('click', ()=>{ saveGhFields(); publishNow(); });
 ghPull.addEventListener('click', ()=>{ syncFromRemote(true, true); });
-exportAllBtn.addEventListener('click', ()=>{
-  const rows = HORSES.map(h=>({'Class':h.cls,'Class name':h.cn,'Horsename':h.hn,'Horse country':h.co,'Sex':h.sx,'Birth date':h.dob,'Color':h.col,'Sire':h.sire,'Dam':h.dam,'Owner':h.own,'Owner Email':h.email||'','Owner Phone':h.phone||'','Paid':h.paid?'Yes':'No'}));
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Catalogue');
-  XLSX.writeFile(wb, 'Horse_Catalogue_Backup.xlsx');
-});
+
+async function ghMsg(res){ try{ const j = await res.json(); return (j && j.message) || ''; }catch(e){ return ''; } }
+function ghErr(s, msg, writing){
+  const extra = msg ? ' [GitHub says: "'+msg+'"]' : '';
+  if(writing && (s===404 || s===403)) return 'GitHub will not let this token WRITE to the repository ('+s+'). Edit the token on GitHub: Repository access = "Only select repositories" → this repository, and Permissions → Contents = "Read and write" (a classic token needs the "repo" scope). Then paste the new token and Save settings.'+extra;
+  return (s===401 ? 'GitHub rejected the token (401) — it is mistyped, expired or revoked'
+       : s===403 ? 'GitHub refused (403) — the token needs Contents: Read and write on this repository (or rate limit)'
+       : s===404 ? 'GitHub says not found (404) — check user, repository and branch, and that the token was given access to this repository'
+       : s===422 ? 'GitHub could not accept the file (422) — check the branch name'
+       : 'GitHub error '+s)+extra;
+}
+// Step-by-step connection check, shown under the button.
+async function diagnose(){
+  saveGhFields(); const c = ghCfg(), out = [];
+  const say = (ok,t)=>{ out.push((ok===true?'✅ ':ok===false?'❌ ':'⚠️ ')+t); ghDiag.textContent = out.join('\n'); };
+  ghDiag.textContent = 'Checking…';
+  if(!c.owner || !c.repo || !c.token){ say(false,'Fill in GitHub user, repository and token first.'); return; }
+  const H = {'Authorization':'Bearer '+c.token, 'Accept':'application/vnd.github+json'};
+  const api = 'https://api.github.com';
+  try{
+    let r = await fetch(api+'/user', {headers:H});
+    if(r.status===401){ say(false, ghErr(401)+'. Create a new token.'); return; }
+    say(true, 'Reached GitHub and the token was accepted');
+    r = await fetch(`${api}/repos/${c.owner}/${c.repo}`, {headers:H});
+    if(!r.ok){ say(false, 'Repository "'+c.owner+'/'+c.repo+'": '+ghErr(r.status)); return; }
+    const j = await r.json();
+    say(true, 'Repository found ('+(j.private?'private':'public')+')');
+    if(j.permissions && j.permissions.push===false){ say(false,'Token can read but NOT write — set Contents to "Read and write".'); return; }
+    r = await fetch(`${api}/repos/${c.owner}/${c.repo}/git/blobs`, {method:'POST', headers:{...H,'Content-Type':'application/json'}, body:JSON.stringify({content:'connection test', encoding:'utf-8'})});
+    if(!r.ok){ say(false, 'Token can read the repository but is NOT allowed to write ('+r.status+'). On GitHub edit the token: Repository access = "Only select repositories" → '+c.repo+'; Permissions → Contents = "Read and write" (classic token: tick "repo"). Then paste it again.'); return; }
+    say(true, 'Token is allowed to write to the repository');
+    r = await fetch(`${api}/repos/${c.owner}/${c.repo}/branches/${encodeURIComponent(c.branch||'main')}`, {headers:H});
+    if(!r.ok){ say(false,'Branch "'+(c.branch||'main')+'" not found — the default is usually main (some repos use master).'); return; }
+    say(true,'Branch "'+(c.branch||'main')+'" found');
+    r = await fetch(`${api}/repos/${c.owner}/${c.repo}/contents/${(c.path||'data.xlsx').split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(c.branch||'main')}`, {headers:H});
+    say(r.ok ? true : null, r.ok ? (c.path||'data.xlsx')+' is in the repository' : (c.path||'data.xlsx')+' is not in the repository yet — click "Publish to GitHub now" (Data Tools, below) to create it, or upload the supplied data.xlsx.');
+    const base = c.repo.toLowerCase()===(c.owner+'.github.io').toLowerCase() ? `https://${c.owner}.github.io/` : `https://${c.owner}.github.io/${c.repo}/`;
+    try{ const w = await fetch(base+(c.path||'data.xlsx')+'?t='+Date.now(), {cache:'no-store'});
+         say(w.ok, w.ok ? 'Website is live: '+base : 'Website returned '+w.status+' — turn on Settings → Pages (deploy from branch '+(c.branch||'main')+', folder /root) and wait a minute.'); }
+    catch(e){ say(false,'Website '+base+' not reachable yet — enable Settings → Pages.'); }
+    out.push(''); out.push('All set — edits will publish automatically.'); ghDiag.textContent = out.join('\n');
+  } catch(e){ say(false,'Could not reach api.github.com ('+e.message+'). Check your internet, VPN/firewall, or an ad-blocker/browser extension blocking it.'); }
+}
+ghTest.addEventListener('click', diagnose);
 window.addEventListener('error', e=>setSyncNote('Page error: '+e.message));
 
 
@@ -908,16 +965,12 @@ document.getElementById('dbExportPaidBtn').addEventListener('click',exportPaid);
 
 const initialView = document.body.classList.contains('viewonly') ? 'dash' : ['dash','inv','db'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'dash';
 activateView(initialView);
-(async function startSync(){
-  await refreshAuth();
-  await syncFromRemote(true);
-  if(APP_MODE==='shared' && sb){
-    let t;
-    sb.channel('horses-live').on('postgres_changes',{event:'*',schema:'public',table:'horses'},()=>{ clearTimeout(t); t=setTimeout(()=>syncFromRemote(false),700); }).subscribe();
-    setInterval(()=>syncFromRemote(false), 60000);
-    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) syncFromRemote(false); });
-  }
-})();
+loadGhFields();
+if(APP_MODE==='shared'){
+  syncFromRemote(true);
+  setInterval(()=>syncFromRemote(false), 60000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) syncFromRemote(false); });
+} else { syncFromRemote(true); }
 
 </script>
 </body>
